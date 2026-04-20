@@ -1,6 +1,7 @@
 package com.telu.ecom_project.model;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,8 +26,10 @@ public class Product {
     private String description;
     private String brand;
     private BigDecimal price;
-    private String category;
-
+    
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     private String releaseDate;
     private boolean productAvailable;
@@ -35,6 +38,12 @@ public class Product {
     private String imageName;
     private String imageType;
 
+    private boolean lowStock;
+
     @Lob
-    private byte[] imageDate;
+    private byte[] imageData;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private List<Review> reviews;
+
 }

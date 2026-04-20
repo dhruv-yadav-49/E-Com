@@ -11,7 +11,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.telu.ecom_project.model.Category;
 import com.telu.ecom_project.model.Product;
+import com.telu.ecom_project.repo.CategoryRepo;
 import com.telu.ecom_project.repo.ProductRepo;
 
 @Service
@@ -19,6 +21,9 @@ public class ProductService {
     
     @Autowired
     private ProductRepo repo;
+
+    @Autowired
+    private CategoryRepo categoryRepo;
 
     public List<Product> getAllProducts(){
         return repo.findAll();
@@ -28,10 +33,19 @@ public class ProductService {
         return repo.findById(id).orElse(null);
     }
 
-    public Product addProduct(Product product, MultipartFile imagFile) throws IOException {
+    public Product addProduct(Product product, MultipartFile imagFile, int categoryId) throws IOException {
+
+        Category category = categoryRepo.findById(categoryId)
+            .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        product.setCategory(category);
+
         product.setImageName(imagFile.getOriginalFilename());
         product.setImageType(imagFile.getContentType());
-        product.setImageDate(imagFile.getBytes());
+        product.setImageData(imagFile.getBytes());
+
+        updateStockStatus(product);
+
         return repo.save(product);
     }
 
@@ -49,7 +63,9 @@ public class ProductService {
 
         existingProduct.setImageName(imagFile.getOriginalFilename());
         existingProduct.setImageType(imagFile.getContentType());
-        existingProduct.setImageDate(imagFile.getBytes());
+        existingProduct.setImageData(imagFile.getBytes());
+
+        updateStockStatus(existingProduct);
 
         return repo.save(existingProduct);
     }
@@ -58,7 +74,7 @@ public class ProductService {
         repo.deleteById(id);
     }
 
-    public List<Product> seaProducts(String keyword){
+    public List<Product> searchProducts(String keyword){
         return repo.searchProducts(keyword);
     }
 
@@ -69,7 +85,42 @@ public class ProductService {
     
     public Page<Product> getProductsByCategory(String category, int page, int size, String sortBy){
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
-        return repo.findByCategory(category, pageable);
+        return repo.findByCategoryName(category, pageable);
+    }
+
+    public void updateStockStatus(Product product){
+
+        if(product.getStockQuantity() <= 0 ){
+            product.setProductAvailable(false);
+            product.setLowStock(false);
+        }
+        else if(product.getStockQuantity() <= 5){
+            product.setProductAvailable(true);
+            product.setLowStock(true);
+        }
+        else{
+            product.setProductAvailable(true);
+            product.setLowStock(false);
+        }
+    }
+
+    public String reduceStock(int productId, int quantity) {
+
+        Product product = repo.findById(productId).orElse(null);
+
+        if(product == null) return "Product not found";
+
+        if(product.getStockQuantity() < quantity){
+            return "Insufficient stock";
+        }
+
+        product.setStockQuantity(product.getStockQuantity() - quantity);
+
+        updateStockStatus(product);
+
+        repo.save(product);
+
+        return "Stock updated ✔";
     }
 }
 

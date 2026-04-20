@@ -47,22 +47,22 @@ public class ProductController {
     @PostMapping("/products")
     public ResponseEntity<?> addProduct(
             @RequestParam("product") String productJson,
-            @RequestParam("imageFile") MultipartFile imageFile) {
+            @RequestParam("imageFile") MultipartFile imageFile,
+            @RequestParam("categoryId") int categoryId) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             Product product = mapper.readValue(productJson, Product.class);
 
-            Product saved = service.addProduct(product, imageFile);
-            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+            return ResponseEntity.ok(service.addProduct(product, imageFile, categoryId));
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+            return ResponseEntity.internalServerError().body(e.getMessage());
         }
     }
 
     @GetMapping("/products/search")
     public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword){
-        List<Product> products = service.seaProducts(keyword);
+        List<Product> products = service.searchProducts(keyword);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
@@ -84,4 +84,11 @@ public class ProductController {
     ){
         return ResponseEntity.ok(service.getProductsByCategory(category, page, size, sortBy));
     }
+
+    @PostMapping("/products/{id}/buy")
+    public ResponseEntity<String> buyProduct(@PathVariable int id, @RequestParam int quantity){
+        return ResponseEntity.ok(service.reduceStock(id, quantity));
+    }
+
+
 }
