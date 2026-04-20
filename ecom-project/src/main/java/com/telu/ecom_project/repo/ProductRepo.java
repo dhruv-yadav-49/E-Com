@@ -17,7 +17,8 @@ public interface ProductRepo extends JpaRepository<Product, Integer> {
             "LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(p.brand) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-            "LOWER(p.category) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+            "LOWER(p.category.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Product> searchProducts(String keyword);
-    Page<Product> findByCategory(String category, Pageable pageable);
+    Page<Product> findByCategoryId(Integer categoryId, Pageable pageable);
+    Page<Product> findByCategoryName(String categoryName, Pageable pageable);
 }
