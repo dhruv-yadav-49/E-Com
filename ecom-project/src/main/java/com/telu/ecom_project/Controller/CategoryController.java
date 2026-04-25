@@ -27,7 +27,7 @@ public class CategoryController {
         return ResponseEntity.ok(service.getAllCategories());
     }
 
-    @GetMapping("/category/{id}")
+    @PutMapping("/category/{id}")
     public ResponseEntity<?> update(@PathVariable int id, @RequestBody Category category){
         return ResponseEntity.ok(service.updateCategory(id, category));
     }
