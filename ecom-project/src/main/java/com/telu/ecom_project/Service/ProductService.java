@@ -1,6 +1,7 @@
 package com.telu.ecom_project.Service;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,8 @@ public class ProductService {
 
         updateStockStatus(product);
 
+        applyDiscount(product);
+
         return repo.save(product);
     }
 
@@ -66,6 +69,12 @@ public class ProductService {
         existingProduct.setImageData(imagFile.getBytes());
 
         updateStockStatus(existingProduct);
+
+        existingProduct.setPrice(product.getPrice());
+        existingProduct.setDiscountPercentage(product.getDiscountPercentage());
+        existingProduct.setDiscountAmount(product.getDiscountAmount());
+
+        applyDiscount(existingProduct);
 
         return repo.save(existingProduct);
     }
@@ -121,6 +130,50 @@ public class ProductService {
         repo.save(product);
 
         return "Stock updated ✔";
+    }
+
+    public void applyDiscount(Product product){
+
+        BigDecimal price = product.getPrice();
+        if(price == null) return;
+
+        if(product.getDiscountPercentage() != null){
+            BigDecimal discountPercentage = BigDecimal.valueOf(product.getDiscountPercentage());
+            BigDecimal discount = price.multiply(discountPercentage).divide(BigDecimal.valueOf(100));
+            product.setFinalPrice(price.subtract(discount));
+        }
+        else if(product.getDiscountAmount() != null){
+            product.setFinalPrice(price.subtract(product.getDiscountAmount()));
+        }
+        else{
+            product.setFinalPrice(price);
+        }
+    }
+
+
+    public Product applyDiscountByProductId(int id, Double percentage, BigDecimal amount) {
+        Product product = repo.findById(id).orElse(null);
+        if (product == null) return null;
+
+        product.setDiscountPercentage(percentage);
+        product.setDiscountAmount(amount);
+        applyDiscount(product);
+
+        return repo.save(product);
+    }
+
+    public void removeDiscount(int id){
+
+
+        Product product = repo.findById(id).orElse(null);
+        if(product == null) return;
+
+        product.setDiscountPercentage(null);
+        product.setDiscountAmount(null);
+        product.setFinalPrice(product.getPrice());
+
+        repo.save(product);
+
     }
 }
 
