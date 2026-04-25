@@ -26,6 +26,9 @@ public class ProductService {
     @Autowired
     private CategoryRepo categoryRepo;
 
+    @Autowired
+    private EmailService emailService;
+
     public List<Product> getAllProducts(){
         return repo.findAll();
     }
@@ -69,6 +72,7 @@ public class ProductService {
         existingProduct.setImageData(imagFile.getBytes());
 
         updateStockStatus(existingProduct);
+        checkStockAlert(existingProduct);
 
         existingProduct.setPrice(product.getPrice());
         existingProduct.setDiscountPercentage(product.getDiscountPercentage());
@@ -125,6 +129,8 @@ public class ProductService {
 
         product.setStockQuantity(product.getStockQuantity() - quantity);
 
+        checkStockAlert(product);
+
         updateStockStatus(product);
 
         repo.save(product);
@@ -174,6 +180,20 @@ public class ProductService {
 
         repo.save(product);
 
+    }
+
+    public void checkStockAlert(Product product) {
+
+        try {
+            if (product.getStockQuantity() == 0) {
+                emailService.sendLowStockAlert(product.getName());
+            }
+            else if (product.getStockQuantity() < 5) {
+                emailService.sendLowStockAlert(product.getName());
+            }
+        } catch (Exception e) {
+            System.out.println("Email failed but API continue");
+        }
     }
 }
 
