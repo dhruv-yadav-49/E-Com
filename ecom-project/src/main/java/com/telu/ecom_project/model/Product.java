@@ -40,6 +40,13 @@ public class Product {
 
     private boolean lowStock;
 
+
+    private Double discountPercentage;
+    private BigDecimal discountAmount;
+
+
+    private BigDecimal finalPrice;
+
     @Lob
     private byte[] imageData;
 

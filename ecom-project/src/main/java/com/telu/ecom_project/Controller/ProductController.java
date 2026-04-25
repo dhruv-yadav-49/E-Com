@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import java.math.BigDecimal;
+
 
 import com.telu.ecom_project.Service.ProductService;
 import com.telu.ecom_project.model.Product;
@@ -90,5 +92,25 @@ public class ProductController {
         return ResponseEntity.ok(service.reduceStock(id, quantity));
     }
 
+
+    @PostMapping("/products/{id}/apply-discount")
+    public ResponseEntity<?> applyDiscount(
+        @PathVariable int id,
+        @RequestParam(required = false) Double percentage,
+        @RequestParam(required = false) BigDecimal amount){
+
+            Product product = service.applyDiscountByProductId(id, percentage, amount);
+            
+            if(product != null)
+                return ResponseEntity.ok(product);
+            else
+                return ResponseEntity.badRequest().body("Product not found");
+        }
+
+    @PostMapping("/products/{id}/remove-discount")
+    public ResponseEntity<?> removeDiscount(@PathVariable int id){
+        service.removeDiscount(id);
+        return ResponseEntity.ok("Discount removed");
+    }
 
 }
