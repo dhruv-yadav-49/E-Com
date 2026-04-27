@@ -1,4 +1,4 @@
-package com.telu.ecom_project.Service;
+package com.telu.ecom_project.service;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

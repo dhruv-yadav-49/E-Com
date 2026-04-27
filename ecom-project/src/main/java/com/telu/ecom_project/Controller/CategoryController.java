@@ -5,10 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.telu.ecom_project.Service.CategoryService;
-
 import java.util.List;
 import com.telu.ecom_project.model.Category;
+import com.telu.ecom_project.service.CategoryService;
 
 @RestController
 @RequestMapping("/api")

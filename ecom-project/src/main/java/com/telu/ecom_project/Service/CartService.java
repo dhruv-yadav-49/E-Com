@@ -1,4 +1,4 @@
-package com.telu.ecom_project.Service;
+package com.telu.ecom_project.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +63,7 @@ public class CartService {
             .orElse(null);
 
         if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + qty);
+            existingItem.setQuantity(existingItem.getQuantity() + (qty != null ? qty : 0));
         } else {
             CartItem item = new CartItem();
             item.setProduct(product);

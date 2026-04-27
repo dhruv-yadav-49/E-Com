@@ -1,4 +1,4 @@
-package com.telu.ecom_project.Service;
+package com.telu.ecom_project.service;
 
 import java.io.IOException;
 import java.math.BigDecimal;

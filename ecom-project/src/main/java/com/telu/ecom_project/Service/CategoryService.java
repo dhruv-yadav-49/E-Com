@@ -1,4 +1,4 @@
-package com.telu.ecom_project.Service;
+package com.telu.ecom_project.service;
 
 import java.util.List;
 

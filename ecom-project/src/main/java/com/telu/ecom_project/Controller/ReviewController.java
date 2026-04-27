@@ -11,8 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import jakarta.validation.Valid;
 import java.util.List;
 
-import com.telu.ecom_project.Service.ReviewService;
 import com.telu.ecom_project.model.Review;
+import com.telu.ecom_project.service.ReviewService;
 
 @RestController
 @RequestMapping("/api")
