@@ -10,6 +10,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Data
@@ -27,6 +28,7 @@ public class OrderItem {
 
     private BigDecimal price;
     
+    @JsonIgnore
     @ManyToOne
     private Order order;
 }

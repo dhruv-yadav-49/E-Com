@@ -16,10 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 
-
-import com.telu.ecom_project.Service.ProductService;
 import com.telu.ecom_project.model.Product;
-
+import com.telu.ecom_project.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController

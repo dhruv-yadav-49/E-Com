@@ -10,6 +10,7 @@ import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 
@@ -47,9 +48,11 @@ public class Product {
 
     private BigDecimal finalPrice;
 
+    @JsonIgnore
     @Lob
     private byte[] imageData;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private List<Review> reviews;
 

@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.telu.ecom_project.Service.CartService;
 import com.telu.ecom_project.dto.CartItemRequest;
 import com.telu.ecom_project.model.Cart;
+import com.telu.ecom_project.service.CartService;
 
 @RestController
 @RequestMapping("/api/cart")

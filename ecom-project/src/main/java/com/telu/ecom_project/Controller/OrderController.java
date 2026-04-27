@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.telu.ecom_project.Service.OrderService;
 import com.telu.ecom_project.dto.OrderRequest;
 import com.telu.ecom_project.model.Order;
+import com.telu.ecom_project.service.OrderService;
 
 @RestController
 @RequestMapping("/api/order")
