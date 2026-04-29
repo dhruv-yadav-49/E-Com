@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.telu.ecom_project.dto.OrderRequest;
@@ -25,8 +26,14 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping("/place")
-    public ResponseEntity<Order> placeOrder(@RequestBody OrderRequest request){
-        return ResponseEntity.ok(orderService.placeOrder(request.getEmail(), request.getPaymentMethod()));
+    public ResponseEntity<Order> createOrder(@RequestBody OrderRequest request){
+        return ResponseEntity.ok(orderService.createOrder(request.getEmail(), request.getPaymentMethod()));
+    }
+    
+    @PostMapping("/confirm")
+    public ResponseEntity<String> confirmOrder(@RequestParam int orderId){
+        orderService.confirmOrder(orderId);
+        return ResponseEntity.ok("Order confirmed successfully");
     }
 
     @GetMapping("/{email}")

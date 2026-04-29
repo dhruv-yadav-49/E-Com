@@ -3,10 +3,6 @@ package com.telu.ecom_project.model;
 import java.math.BigDecimal;
 import java.util.List;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -36,8 +32,8 @@ public class Product {
     private boolean productAvailable;
     private int stockQuantity;
 
-    private String imageName;
-    private String imageType;
+    private String imageUrl;
+
 
     private boolean lowStock;
 
@@ -48,9 +44,6 @@ public class Product {
 
     private BigDecimal finalPrice;
 
-    @JsonIgnore
-    @Lob
-    private byte[] imageData;
 
     @JsonIgnore
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
