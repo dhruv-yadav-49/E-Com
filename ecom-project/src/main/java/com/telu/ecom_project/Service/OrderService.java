@@ -3,6 +3,7 @@ package com.telu.ecom_project.service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class OrderService {
     private ProductService productService; // For stock alerts
 
     @Transactional
-    public Order placeOrder(String email, String paymentMethod){
+    public Order createOrder(String email, String paymentMethod){
 
         Cart cart = cartRepo.findByUserEmail(email);
 
@@ -44,25 +45,19 @@ public class OrderService {
 
         Order order = new Order();
         order.setUserEmail(email);
-        order.setStatus("CREATED");
+        order.setStatus("PENDING_PAYMENT");   // 🔥 IMPORTANT
         order.setPaymentMethod(paymentMethod);
 
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
 
-        for (CartItem ci : cart.getItems()){
+        for (CartItem ci : cart.getItems()) {
+
             Product p = ci.getProduct();
 
             if(p.getStockQuantity() < ci.getQuantity()){
                 throw new RuntimeException("Insufficient stock for product: " + p.getName());
             }
-
-            // Deduct stock
-            p.setStockQuantity(p.getStockQuantity() - ci.getQuantity());
-            
-            // Trigger stock alerts if needed
-            productService.updateStockStatus(p);
-            productService.checkStockAlert(p);
 
             BigDecimal price = p.getFinalPrice();
             if (price == null) price = p.getPrice();
@@ -75,20 +70,47 @@ public class OrderService {
 
             total = total.add(price.multiply(BigDecimal.valueOf(ci.getQuantity())));
             orderItems.add(oi);
-
-            productRepo.save(p);
         }
 
         order.setItems(orderItems);
         order.setTotalAmount(total);
 
-        Order saved = orderRepo.save(order);
+        return orderRepo.save(order);
+    }
+    
+    @Transactional
+    public void confirmOrder(Integer orderId){
+        Objects.requireNonNull(orderId, "orderId must not be null");
+        
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
-        // Clear cart
+        if(!order.getStatus().equals("PENDING_PAYMENT")){
+            throw new RuntimeException("Invalid order state for confirmation");
+        }
+
+        Cart cart = cartRepo.findByUserEmail(order.getUserEmail());
+
+        for(CartItem ci : cart.getItems()){
+
+            Product p = ci.getProduct();
+
+            if(p.getStockQuantity() < ci.getQuantity()){
+                throw new RuntimeException("Stock issue for: " + p.getName());
+            }
+
+            p.setStockQuantity(p.getStockQuantity() - ci.getQuantity());
+            productService.updateStockStatus(p);
+            productService.checkStockAlert(p);
+
+            productRepo.save(p);
+        }
+
+        order.setStatus("CONFIRMED");
+        orderRepo.save(order);
+
         cart.getItems().clear();
         cartRepo.save(cart);
-
-        return saved;
     }
 
     public List<Order> getOrdersByUserEmail(String email){

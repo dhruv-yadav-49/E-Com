@@ -6,10 +6,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -28,11 +31,13 @@ public class ProductController {
     @Autowired
     private ProductService service;
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products")
     public ResponseEntity<List<Product>> getAllProducts(){
         return new ResponseEntity<>(service.getAllProducts(), HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/{id}")
     public ResponseEntity<Product> getProduct(@PathVariable int id){
 
@@ -44,6 +49,7 @@ public class ProductController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/products")
     public ResponseEntity<?> addProduct(
             @RequestParam("product") String productJson,
@@ -60,12 +66,42 @@ public class ProductController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/products/{id}")
+    public ResponseEntity<?> updateProduct(
+            @PathVariable int id,
+            @RequestParam("product") String productJson,
+            @RequestParam("imageFile") MultipartFile imageFile) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            Product product = mapper.readValue(productJson, Product.class);
+
+            Product updated = service.updateProduct(id, product, imageFile);
+            if (updated != null)
+                return ResponseEntity.ok(updated);
+            else
+                return ResponseEntity.notFound().build();
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<String> deleteProduct(@PathVariable int id) {
+        service.deleteProduct(id);
+        return ResponseEntity.ok("Product deleted successfully");
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/search")
     public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword){
         List<Product> products = service.searchProducts(keyword);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/page")
     public ResponseEntity<Page<Product>> getProducts(
         @RequestParam(defaultValue = "0") int page,
@@ -75,6 +111,7 @@ public class ProductController {
         return ResponseEntity.ok(service.getProducts(page, size, sortBy));
     }
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/category")
     public ResponseEntity<Page<Product>> getProductsByCategory(
         @RequestParam String category,
@@ -85,12 +122,13 @@ public class ProductController {
         return ResponseEntity.ok(service.getProductsByCategory(category, page, size, sortBy));
     }
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PostMapping("/products/{id}/buy")
     public ResponseEntity<String> buyProduct(@PathVariable int id, @RequestParam int quantity){
         return ResponseEntity.ok(service.reduceStock(id, quantity));
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/products/{id}/apply-discount")
     public ResponseEntity<?> applyDiscount(
         @PathVariable int id,
@@ -105,6 +143,7 @@ public class ProductController {
                 return ResponseEntity.badRequest().body("Product not found");
         }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/products/{id}/remove-discount")
     public ResponseEntity<?> removeDiscount(@PathVariable int id){
         service.removeDiscount(id);

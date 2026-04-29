@@ -29,6 +29,9 @@ public class ProductService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private S3Service s3Service;
+
     public List<Product> getAllProducts(){
         return repo.findAll();
     }
@@ -43,10 +46,11 @@ public class ProductService {
             .orElseThrow(() -> new RuntimeException("Category not found"));
 
         product.setCategory(category);
-
-        product.setImageName(imagFile.getOriginalFilename());
-        product.setImageType(imagFile.getContentType());
-        product.setImageData(imagFile.getBytes());
+        
+        if (imagFile != null && !imagFile.isEmpty()) {
+            String imageUrl = s3Service.uploadFile(imagFile);
+            product.setImageUrl(imageUrl);
+        }
 
         updateStockStatus(product);
 
@@ -67,9 +71,10 @@ public class ProductService {
         existingProduct.setStockQuantity(product.getStockQuantity());
         existingProduct.setProductAvailable(product.isProductAvailable());
 
-        existingProduct.setImageName(imagFile.getOriginalFilename());
-        existingProduct.setImageType(imagFile.getContentType());
-        existingProduct.setImageData(imagFile.getBytes());
+        if (imagFile != null && !imagFile.isEmpty()) {
+            String imageUrl = s3Service.uploadFile(imagFile);
+            existingProduct.setImageUrl(imageUrl);
+        }
 
         updateStockStatus(existingProduct);
         checkStockAlert(existingProduct);

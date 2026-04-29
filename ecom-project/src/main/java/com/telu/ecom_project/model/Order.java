@@ -33,6 +33,11 @@ public class Order {
     
     private String paymentMethod;
 
+    private String paymentId;
+    private String razorpayOrderId;
+    private String razorpaySignature;
+    private String paymentStatus;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private List<OrderItem> items;
 }
