@@ -87,11 +87,6 @@ public class ProductService {
 
         return repo.save(existingProduct);
     }
-   
-    public void deleteProduct(int id){
-        repo.deleteById(id);
-    }
-
     public List<Product> searchProducts(String keyword){
         return repo.searchProducts(keyword);
     }
@@ -200,5 +195,45 @@ public class ProductService {
             System.out.println("Email failed but API continue");
         }
     }
+
+    public void deleteProduct(int id){
+        Product product = repo.findById(id).orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+
+        if(product.getImageUrl() != null && !product.getImageUrl().isEmpty()){
+            s3Service.deleteFile(product.getImageUrl());
+        }
+
+        repo.deleteById(id);
+    }
+
+    public void deleteAllProducts(){
+        repo.deleteAll();
+
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void deleteProductByCategoryId(int categoryId){
+        List<Product> products = repo.findByCategoryId(categoryId);
+
+        for(Product product : products){
+            if(product.getImageUrl() != null && !product.getImageUrl().isEmpty()){
+                s3Service.deleteFile(product.getImageUrl());
+            }
+        }
+
+        repo.deleteByCategoryId(categoryId);
+
+    }
+
+    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, String sortBy){
+        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(sortBy));
+        return repo.findByPriceBetween(minPrice, maxPrice, pageable).getContent();
+    }
+
+    public List<Product> getProductsByStockStatus(boolean stockStatus, String sortBy){
+        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(sortBy));
+        return repo.findByProductAvailable(stockStatus, pageable).getContent();
+    }
 }
+
 

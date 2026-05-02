@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
@@ -21,4 +22,12 @@ public interface ProductRepo extends JpaRepository<Product, Integer> {
     List<Product> searchProducts(String keyword);
     Page<Product> findByCategoryId(Integer categoryId, Pageable pageable);
     Page<Product> findByCategoryName(String categoryName, Pageable pageable);
+    Page<Product> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice, Pageable pageable);
+    Page<Product> findByProductAvailable(Boolean productAvailable, Pageable pageable);
+    
+    List<Product> findByCategoryId(Integer categoryId);
+    
+    @org.springframework.transaction.annotation.Transactional
+    void deleteByCategoryId(Integer categoryId);
+
 }

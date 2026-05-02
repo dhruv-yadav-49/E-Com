@@ -76,6 +76,44 @@ public class CartService {
     }
 
     @Transactional
+    public Cart addProductToCart(String email, int productId, int quantity){
+
+        Cart cart = cartRepo.findByUserEmail(email);
+
+        if(cart == null){
+            cart = new Cart();
+            cart.setUserEmail(email);
+            cart.setItems(new ArrayList<>());
+        }
+
+        // Guard against null items (cart exists in DB but has no items yet)
+        if(cart.getItems() == null){
+            cart.setItems(new ArrayList<>());
+        }
+
+        Product product = productRepo.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        // Check if this product is already in the cart
+        CartItem existingItem = cart.getItems().stream()
+                .filter(item -> item.getProduct() != null && item.getProduct().getId().equals(productId))
+                .findFirst()
+                .orElse(null);
+
+        if(existingItem != null){
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+        } else {
+            CartItem item = new CartItem();
+            item.setProduct(product);
+            item.setQuantity(quantity);
+            item.setCart(cart);
+            cart.getItems().add(item);
+        }
+
+        return cartRepo.save(cart);
+    }
+
+    @Transactional
     public Cart removeFromCart(Integer itemId){
         if (itemId == null) {
             throw new RuntimeException("Item ID must not be null");

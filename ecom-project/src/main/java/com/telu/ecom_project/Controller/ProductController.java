@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.math.BigDecimal;
 
 import com.telu.ecom_project.model.Product;
@@ -24,7 +25,7 @@ import com.telu.ecom_project.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5174")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174"})
 @RequestMapping("/api")
 public class ProductController {
     
@@ -150,4 +151,38 @@ public class ProductController {
         return ResponseEntity.ok("Discount removed");
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/products")
+    public ResponseEntity<String> deleteAllProducts(){
+        service.deleteAllProducts();
+        return ResponseEntity.ok("All products deleted");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/products/category/{categoryId}")
+    public ResponseEntity<String> deleteProductByCategoryId(@PathVariable int categoryId){
+        service.deleteProductByCategoryId(categoryId);
+        return ResponseEntity.ok("Products of Category " + categoryId + "are deleted successfully!");
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/products/price-range")
+    public ResponseEntity<List<Product>>getProductsByPriceRange(
+        @RequestParam BigDecimal minPrice,
+        @RequestParam BigDecimal maxPrice,
+        @RequestParam String sortBy
+    ){
+        List<Product> products = service.getProductsByPriceRange(minPrice, maxPrice, sortBy);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/products/stock-status")
+    public ResponseEntity<List<Product>>getProductsByStockStatus(
+        @RequestParam boolean stockStatus,
+        @RequestParam String sortBy
+    ){
+        List<Product> products = service.getProductsByStockStatus(stockStatus, sortBy);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
 }

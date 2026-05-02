@@ -20,8 +20,7 @@ import com.telu.ecom_project.model.UserType;
 import com.telu.ecom_project.repo.UserRepo;
 import com.telu.ecom_project.response.ApiResponse;
 import com.telu.ecom_project.security.JwtService;
-import com.telu.ecom_project.service.EmailService;
-import com.telu.ecom_project.service.VerificationTokenService;
+// import com.telu.ecom_project.service.VerificationTokenService;
 import com.telu.ecom_project.serviceInterface.IUserService;
 import com.telu.ecom_project.utils.UserMapper;
 
@@ -39,11 +38,8 @@ public class UserServiceImpl implements IUserService {
     @Autowired @Lazy
     private AuthenticationManager authenticationManager;
 
-    @Autowired
-    private VerificationTokenService verificationTokenService;
-
-    @Autowired
-    private EmailService emailService;
+    // @Autowired
+    // private VerificationTokenService verificationTokenService;
 
     @Override
     @Transactional
@@ -102,8 +98,8 @@ public class UserServiceImpl implements IUserService {
                 .build();
 
         User saved = userRepo.save(user);
-        String token = verificationTokenService.generateEmailVerificationToken(saved.getEmail());
-        String link = "http://localhost:8080/api/auth/verify-email?token=" + token;
+        // String token = verificationTokenService.generateEmailVerificationToken(saved.getEmail());
+        // String link = "http://localhost:8080/api/auth/verify-email?token=" + token;
 
         // emailService.sendEmailVerificationLink(saved.getEmail(), link);
 
@@ -140,9 +136,10 @@ public class UserServiceImpl implements IUserService {
         if (!user.getIsActive())
             return new ApiResponse<>(403, "Account Disabled", null);
 
-        if (!user.getIsEmailVerified()) {
-            return new ApiResponse<>(403, "Please verify your email before logging in", null);
-        }
+        // Email verification is disabled (email sending is commented out)
+        // if (!user.getIsEmailVerified()) {
+        //     return new ApiResponse<>(403, "Please verify your email before logging in", null);
+        // }
 
         user.setLastLogin(java.time.LocalDateTime.now());
         userRepo.save(user);
