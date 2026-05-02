@@ -2,6 +2,7 @@ package com.telu.ecom_project.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.core.sync.RequestBody;
 
@@ -9,7 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
-import java.util.UUID;
+
 
 @Service
 public class S3Service {
@@ -34,5 +35,16 @@ public class S3Service {
                 RequestBody.fromBytes(file.getBytes()));
 
         return "https://" + bucketName + ".s3.amazonaws.com/" + fileName;
+    }
+
+    public void deleteFile(String fileUrl){
+        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+
+        DeleteObjectRequest request = DeleteObjectRequest.builder()
+                .bucket(bucketName)
+                .key(fileName)
+                .build();
+
+                s3Client.deleteObject(request);
     }
 }
