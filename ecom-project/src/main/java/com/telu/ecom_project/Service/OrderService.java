@@ -34,6 +34,9 @@ public class OrderService {
     @Autowired
     private ProductService productService; // For stock alerts
 
+    @Autowired
+    private EmailService emailService;
+
     @Transactional
     public Order createOrder(String email, String paymentMethod){
 
@@ -108,6 +111,12 @@ public class OrderService {
 
         order.setStatus("CONFIRMED");
         orderRepo.save(order);
+
+        emailService.sendEmail(
+            order.getUserEmail(),
+            "Order Confirmed ✅",
+            "Your order #" + order.getId() + " has been placed successfully!"
+        );
 
         cart.getItems().clear();
         cartRepo.save(cart);

@@ -4,14 +4,15 @@ import API from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import toast from 'react-hot-toast';
-import { Heart, ShoppingCart, Package, ArrowLeft, Trash2 } from 'lucide-react';
+import { Heart, ShoppingCart, Package, ArrowLeft, Trash2, Loader2 } from 'lucide-react';
 
 export default function Wishlist() {
   const { user } = useAuth();
-  const { addToCart } = useCart();
+  const { refreshCart } = useCart();
   const navigate = useNavigate();
   const [wishlist, setWishlist] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState({});
 
   useEffect(() => {
     fetchWishlist();
@@ -26,11 +27,24 @@ export default function Wishlist() {
   };
 
   const handleRemove = async (productId) => {
+    setActionLoading(prev => ({ ...prev, [productId]: 'remove' }));
     try {
       const res = await API.delete(`/api/wishlist/remove/${productId}`, { params: { userEmail: user.email } });
       setWishlist(res.data?.data);
       toast.success('Removed from wishlist');
     } catch { toast.error('Failed to remove'); }
+    finally { setActionLoading(prev => ({ ...prev, [productId]: null })); }
+  };
+
+  const handleMoveToCart = async (productId) => {
+    setActionLoading(prev => ({ ...prev, [productId]: 'cart' }));
+    try {
+      await API.post(`/api/wishlist/move-to-cart/${productId}`, {}, { params: { userEmail: user.email } });
+      await refreshCart();
+      await fetchWishlist();
+      toast.success('Moved to cart');
+    } catch { toast.error('Failed to move to cart'); }
+    finally { setActionLoading(prev => ({ ...prev, [productId]: null })); }
   };
 
   const handleClear = async () => {
@@ -39,13 +53,6 @@ export default function Wishlist() {
       setWishlist(null);
       toast.success('Wishlist cleared!');
     } catch { toast.error('Failed to clear wishlist'); }
-  };
-
-  const handleAddToCart = async (productId) => {
-    try {
-      await addToCart(productId, 1);
-      toast.success('Added to cart!');
-    } catch { toast.error('Failed to add to cart'); }
   };
 
   if (loading) return <div className="page-loading"><div className="spinner-lg" /></div>;
@@ -97,11 +104,20 @@ export default function Wishlist() {
                     )}
                   </div>
                   <div className="product-actions">
-                    <button className="btn-cart" onClick={() => handleAddToCart(product.id)}>
-                      <ShoppingCart size={16} /> Add to Cart
+                    <button 
+                      className="btn-cart" 
+                      disabled={!!actionLoading[product.id]}
+                      onClick={() => handleMoveToCart(product.id)}
+                    >
+                      {actionLoading[product.id] === 'cart' ? <Loader2 className="animate-spin" size={16} /> : <ShoppingCart size={16} />}
+                      Move to Cart
                     </button>
-                    <button className="btn-wishlist active" onClick={() => handleRemove(product.id)}>
-                      <Trash2 size={18} />
+                    <button 
+                      className="btn-wishlist active" 
+                      disabled={!!actionLoading[product.id]}
+                      onClick={() => handleRemove(product.id)}
+                    >
+                      {actionLoading[product.id] === 'remove' ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
                     </button>
                   </div>
                 </div>

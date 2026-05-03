@@ -129,6 +129,7 @@ main{padding-top:70px;min-height:100vh}
 .badge-discount{position:absolute;top:10px;left:10px;background:var(--red);color:#fff;font-size:.75rem;font-weight:700;padding:4px 8px;border-radius:6px}
 .badge-discount.large{font-size:.9rem;padding:6px 12px}
 .badge-oos{position:absolute;top:10px;right:10px;background:var(--bg);color:var(--text3);font-size:.75rem;font-weight:600;padding:4px 8px;border-radius:6px;border:1px solid var(--bg3)}
+.badge-low-stock{position:absolute;bottom:10px;left:10px;background:rgba(245,158,11,.9);color:#fff;font-size:.72rem;font-weight:700;padding:3px 8px;border-radius:6px;backdrop-filter:blur(4px)}
 .product-info{padding:16px;display:flex;flex-direction:column;gap:8px;flex:1}
 .product-brand{font-size:.8rem;color:var(--accent2);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .product-name{font-size:.95rem;font-weight:600;color:var(--text);cursor:pointer;line-height:1.4}

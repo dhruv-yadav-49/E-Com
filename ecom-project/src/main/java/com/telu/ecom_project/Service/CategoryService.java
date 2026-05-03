@@ -11,7 +11,7 @@ import com.telu.ecom_project.repo.CategoryRepo;
 @Service
 public class CategoryService {
     
-    @Autowired 
+    @Autowired
     private CategoryRepo repo;
 
     public Category createCategory(Category category){

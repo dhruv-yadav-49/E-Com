@@ -53,7 +53,9 @@ export default function ProductDetail() {
     try {
       await addToCart(parseInt(id), quantity);
       toast.success('Added to cart!');
-    } catch { toast.error('Failed to add to cart'); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add to cart');
+    }
   };
 
   const handleWishlist = async () => {
@@ -146,12 +148,15 @@ export default function ProductDetail() {
 
             <div className="stock-info">
               {product.productAvailable ? (
-                <span className="in-stock"><CheckCircle size={16} /> In Stock ({product.stockQuantity} left)</span>
+                product.lowStock ? (
+                  <span className="low-stock-warn">
+                    ⚠️ Only <strong>{product.stockQuantity}</strong> left — Order soon!
+                  </span>
+                ) : (
+                  <span className="in-stock"><CheckCircle size={16} /> In Stock ({product.stockQuantity} available)</span>
+                )
               ) : (
                 <span className="out-stock"><XCircle size={16} /> Out of Stock</span>
-              )}
-              {product.lowStock && product.productAvailable && (
-                <span className="low-stock-warn">⚠️ Only a few left!</span>
               )}
             </div>
 
@@ -170,7 +175,8 @@ export default function ProductDetail() {
                 onClick={handleAddToCart}
                 disabled={!product.productAvailable}
               >
-                <ShoppingCart size={20} /> Add to Cart
+                <ShoppingCart size={20} />
+                {product.productAvailable ? 'Add to Cart' : 'Out of Stock'}
               </button>
               <button
                 className={`btn-wishlist-lg ${inWishlist ? 'active' : ''}`}

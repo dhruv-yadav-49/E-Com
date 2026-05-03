@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.razorpay.Order;
 import com.telu.ecom_project.response.ApiResponse;
+import com.telu.ecom_project.service.EmailService;
 import com.telu.ecom_project.service.PaymentService;
 
 @RestController
@@ -18,6 +19,9 @@ public class PaymentController {
 
     @Autowired
     private PaymentService paymentService;
+
+    @Autowired
+    private EmailService emailService;
 
     /**
      * Create a Razorpay order.
@@ -53,10 +57,18 @@ public class PaymentController {
         String orderId    = body.get("orderId");
         String paymentId  = body.get("paymentId");
         String signature  = body.get("signature");
+        String email      = body.get("email");
 
         boolean valid = paymentService.verifySignature(signature, orderId, paymentId);
 
         if (valid) {
+            if (email != null && !email.isBlank()) {
+                emailService.sendEmail(
+                    email,
+                    "Payment Successful 💰",
+                    "Your payment was successful. Thank you for shopping with us!"
+                );
+            }
             return ResponseEntity.ok(new ApiResponse<>(200, "Payment verified successfully", true));
         } else {
             return ResponseEntity.badRequest()
