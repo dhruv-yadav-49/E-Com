@@ -217,4 +217,19 @@ public class UserServiceImpl implements IUserService {
         }
     }
 
+    @Override
+    public ApiResponse<UserResponse> toggleUserStatus(Long userId) {
+        if (userId == null) {
+            return new ApiResponse<>(400, "User ID cannot be null", null);
+        }
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setIsActive(!user.getIsActive());
+        User saved = userRepo.save(user);
+
+        String msg = saved.getIsActive() ? "User activated successfully" : "User deactivated successfully";
+        return new ApiResponse<>(200, msg, UserMapper.mapUserToUserResponse(saved));
+    }
+
 }

@@ -7,6 +7,7 @@ import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 import com.telu.ecom_project.model.Cart;
 import com.telu.ecom_project.model.CartItem;
@@ -20,6 +21,7 @@ import com.telu.ecom_project.repo.ProductRepo;
 import jakarta.transaction.Transactional;
 
 @Service
+@SuppressWarnings("null")
 public class OrderService {
     
     @Autowired
@@ -50,6 +52,7 @@ public class OrderService {
         order.setUserEmail(email);
         order.setStatus("PENDING_PAYMENT");   // 🔥 IMPORTANT
         order.setPaymentMethod(paymentMethod);
+        order.setUpdatedAt(LocalDateTime.now());
 
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
@@ -110,6 +113,7 @@ public class OrderService {
         }
 
         order.setStatus("CONFIRMED");
+        order.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(order);
 
         emailService.sendEmail(
@@ -120,6 +124,17 @@ public class OrderService {
 
         cart.getItems().clear();
         cartRepo.save(cart);
+    }
+
+    public Order updateOrderStatus(Integer orderId, String status){
+
+        Order order = orderRepo.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        order.setStatus(status.toUpperCase());
+        order.setUpdatedAt(LocalDateTime.now());
+
+        return orderRepo.save(order);
     }
 
     public List<Order> getOrdersByUserEmail(String email){

@@ -29,4 +29,6 @@ public interface IUserService  {
 	
 	ApiResponse<String> updateUserRole(Long userId, String role);
 
+	ApiResponse<UserResponse> toggleUserStatus(Long userId);
+
 }

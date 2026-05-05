@@ -35,4 +35,6 @@ public class Category {
     @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private List<Product> products;
+
+    private String imageUrl;
 }

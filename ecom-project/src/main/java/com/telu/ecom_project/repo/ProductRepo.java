@@ -30,4 +30,16 @@ public interface ProductRepo extends JpaRepository<Product, Integer> {
     @org.springframework.transaction.annotation.Transactional
     void deleteByCategoryId(Integer categoryId);
 
+    // 🔹 Total Products
+    @Query("SELECT COUNT(p) FROM Product p")
+    Long getTotalProducts();
+
+    // 🔹 Out of Stock Products
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.stockQuantity = 0")
+    Long getOutOfStockCount();
+
+    // 🔹 Low Stock Products (stock < 10)
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.stockQuantity > 0 AND p.stockQuantity < 10")
+    Long getLowStockCount();
+
 }

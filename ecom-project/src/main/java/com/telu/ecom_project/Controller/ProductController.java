@@ -185,4 +185,10 @@ public class ProductController {
         List<Product> products = service.getProductsByStockStatus(stockStatus, sortBy);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/products/compare")
+    public ResponseEntity<List<Product>> compareProducts(@RequestParam List<Integer> ids) {
+        return ResponseEntity.ok(service.compareProducts(ids));
+    }
 }
