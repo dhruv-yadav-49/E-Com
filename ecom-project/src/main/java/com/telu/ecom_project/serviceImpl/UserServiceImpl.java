@@ -38,8 +38,12 @@ public class UserServiceImpl implements IUserService {
     @Autowired @Lazy
     private AuthenticationManager authenticationManager;
 
-    // @Autowired
-    // private VerificationTokenService verificationTokenService;
+    private final com.telu.ecom_project.service.EmailService emailService;
+    private final com.telu.ecom_project.service.VerificationTokenService verificationTokenService;
+
+    // Simple in-memory rate limiter for login
+    private final java.util.concurrent.ConcurrentHashMap<String, Integer> loginAttempts = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> lockoutTimestamps = new java.util.concurrent.ConcurrentHashMap<>();
 
     @Override
     @Transactional
@@ -98,10 +102,11 @@ public class UserServiceImpl implements IUserService {
                 .build();
 
         User saved = userRepo.save(user);
-        // String token = verificationTokenService.generateEmailVerificationToken(saved.getEmail());
-        // String link = "http://localhost:8080/api/auth/verify-email?token=" + token;
+        
+        String token = verificationTokenService.generateEmailVerificationToken(saved.getEmail());
+        String link = "http://localhost:8080/api/auth/verify-email?token=" + token;
 
-        // emailService.sendEmailVerificationLink(saved.getEmail(), link);
+        emailService.sendEmailVerificationLink(saved.getEmail(), link);
 
         AuthResponse auth = AuthResponse.builder()
                 .accessToken(jwtService.generateAccessToken(saved))
@@ -112,7 +117,7 @@ public class UserServiceImpl implements IUserService {
                 .role(saved.getUserType().name())
                 .build();
 
-        return new ApiResponse<>(200, "Registration Successful", auth);
+        return new ApiResponse<>(200, "Registration Successful. Please verify your email.", auth);
     }
 
     @Override
@@ -121,12 +126,35 @@ public class UserServiceImpl implements IUserService {
         if (request == null)
             return new ApiResponse<>(400, "Invalid Request", null);
 
+        String emailKey = request.getEmail().toLowerCase();
+        
+        // Rate Limiting Check
+        if (lockoutTimestamps.containsKey(emailKey)) {
+            if (System.currentTimeMillis() - lockoutTimestamps.get(emailKey) < 900000) { // 15 mins
+                return new ApiResponse<>(429, "Too many failed attempts. Try again in 15 minutes.", null);
+            } else {
+                lockoutTimestamps.remove(emailKey);
+                loginAttempts.remove(emailKey);
+            }
+        }
+
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
                             request.getPassword()));
+            
+            // On success, reset attempts
+            loginAttempts.remove(emailKey);
+            lockoutTimestamps.remove(emailKey);
+
         } catch (BadCredentialsException ex) {
+            int attempts = loginAttempts.getOrDefault(emailKey, 0) + 1;
+            loginAttempts.put(emailKey, attempts);
+            if (attempts >= 5) {
+                lockoutTimestamps.put(emailKey, System.currentTimeMillis());
+                return new ApiResponse<>(429, "Too many failed attempts. Try again in 15 minutes.", null);
+            }
             return new ApiResponse<>(401, "Invalid Email or Password", null);
         }
 
@@ -136,15 +164,18 @@ public class UserServiceImpl implements IUserService {
         if (!user.getIsActive())
             return new ApiResponse<>(403, "Account Disabled", null);
 
-        // Email verification is disabled (email sending is commented out)
-        // if (!user.getIsEmailVerified()) {
-        //     return new ApiResponse<>(403, "Please verify your email before logging in", null);
-        // }
+        if (!user.getIsEmailVerified()) {
+             return new ApiResponse<>(403, "Please verify your email before logging in", null);
+        }
 
         user.setLastLogin(java.time.LocalDateTime.now());
         userRepo.save(user);
 
-        // emailService.sendLoginNotification(user.getEmail(), user.getFullName());
+        try {
+            emailService.sendLoginNotification(user.getEmail(), user.getFullName());
+        } catch (Exception e) {
+            System.err.println("Failed to send login notification email: " + e.getMessage());
+        }
 
         AuthResponse auth = AuthResponse.builder()
                 .accessToken(jwtService.generateAccessToken(user))

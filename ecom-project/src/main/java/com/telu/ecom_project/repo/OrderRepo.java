@@ -26,6 +26,12 @@ public interface OrderRepo extends JpaRepository<Order, Integer> {
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     Long countByStatus(String status);
 
+    @Query(value = "SELECT DATE_FORMAT(created_at, '%b %Y') AS month, SUM(total_amount) " +
+                   "FROM `order` WHERE status = 'DELIVERED' AND created_at >= :sixMonthsAgo " +
+                   "GROUP BY DATE_FORMAT(created_at, '%b %Y'), YEAR(created_at), MONTH(created_at) " +
+                   "ORDER BY YEAR(created_at), MONTH(created_at)", nativeQuery = true)
+    List<Object[]> getMonthlyRevenue(@org.springframework.data.repository.query.Param("sixMonthsAgo") java.time.LocalDateTime sixMonthsAgo);
+
     // 🔹 Recent 5 orders
     @Query("SELECT o FROM Order o ORDER BY o.id DESC")
     List<Order> findRecentOrders(org.springframework.data.domain.Pageable pageable);

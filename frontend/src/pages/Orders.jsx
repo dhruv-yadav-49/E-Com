@@ -30,6 +30,19 @@ export default function Orders() {
     finally { setLoading(false); }
   };
 
+  const handleReturn = async (orderId) => {
+    const reason = window.prompt("Reason for return (e.g. Defective, Wrong Item):");
+    if (!reason) return;
+    try {
+      await API.post('/api/returns-request', null, {
+        params: { orderId, reason, type: 'REFUND', userEmail: user.email }
+      });
+      toast.success('Return request submitted successfully!');
+    } catch (err) {
+      toast.error('Failed to submit return request. It might be past the return window.');
+    }
+  };
+
   if (loading) return <div className="page-loading"><div className="spinner-lg" /></div>;
 
   return (
@@ -69,9 +82,20 @@ export default function Orders() {
                     </div>
                   ))}
                 </div>
-                <div className="order-footer">
+                <div className="order-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="order-method">{order.paymentMethod || 'ONLINE'}</span>
-                  <span className="order-total">Total: <strong>₹{order.totalAmount || '—'}</strong></span>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <span className="order-total">Total: <strong>₹{order.totalAmount || '—'}</strong></span>
+                    {order.status === 'DELIVERED' && (
+                      <button 
+                        className="btn-secondary" 
+                        style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                        onClick={() => handleReturn(order.id)}
+                      >
+                        Return Items
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

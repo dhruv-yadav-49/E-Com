@@ -67,6 +67,40 @@ public class AuthController {
         return ResponseEntity.status(response.getStatus()).body(response);
     }
 
+    @Autowired
+    private com.telu.ecom_project.security.JwtService jwtService;
+
+    /**
+     * Refresh JWT token using a valid refresh token.
+     * POST /api/auth/refresh-token
+     */
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@Valid @RequestBody com.telu.ecom_project.dto.TokenRefreshRequest request) {
+        String requestRefreshToken = request.getRefreshToken();
+
+        if (jwtService.validateToken(requestRefreshToken)) {
+            String email = jwtService.getEmailFromToken(requestRefreshToken);
+            var userOpt = userRepo.findByEmail(email);
+            if (userOpt.isPresent()) {
+                com.telu.ecom_project.model.User user = userOpt.get();
+                String newAccessToken = jwtService.generateAccessToken(user);
+                
+                AuthResponse auth = AuthResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(requestRefreshToken)
+                    .tokenType("Bearer")
+                    .userId(user.getId())
+                    .email(user.getEmail())
+                    .role(user.getUserType().name())
+                    .build();
+                
+                return ResponseEntity.ok(new ApiResponse<>(200, "Token refreshed successfully", auth));
+            }
+        }
+        
+        return ResponseEntity.status(403).body(new ApiResponse<>(403, "Invalid refresh token", null));
+    }
+
     /**
      * Verify user email using the token sent in the verification link.
      * GET /api/auth/verify-email?token=<token>

@@ -1,5 +1,6 @@
 package com.telu.ecom_project.repo;
 
+import com.telu.ecom_project.model.Category;
 import com.telu.ecom_project.model.Product;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -27,6 +28,12 @@ public interface ProductRepo extends JpaRepository<Product, Integer> {
     
     List<Product> findByCategoryId(Integer categoryId);
     
+    Page<Product> findByCategoryAndIdNot(Category category, Integer id, Pageable pageable);
+
+    Page<Product> findByBrand(String brand, Pageable pageable);
+
+    Product findByName(String name);
+
     @org.springframework.transaction.annotation.Transactional
     void deleteByCategoryId(Integer categoryId);
 

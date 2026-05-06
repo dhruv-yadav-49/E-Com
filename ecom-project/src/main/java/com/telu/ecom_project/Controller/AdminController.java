@@ -41,6 +41,12 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getDashboardStats());
     }
 
+    // 🔹 Get Analytics Charts Data
+    @GetMapping("/analytics")
+    public ResponseEntity<com.telu.ecom_project.dto.AnalyticsResponse> getAnalyticsData() {
+        return ResponseEntity.ok(adminService.getAnalytics());
+    }
+
     // 🔹 USER MANAGEMENT
 
     // Get all users

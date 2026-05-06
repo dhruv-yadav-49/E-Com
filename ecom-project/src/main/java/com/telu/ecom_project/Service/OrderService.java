@@ -116,10 +116,11 @@ public class OrderService {
         order.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(order);
 
-        emailService.sendEmail(
+        emailService.sendOrderStatusEmail(
             order.getUserEmail(),
-            "Order Confirmed ✅",
-            "Your order #" + order.getId() + " has been placed successfully!"
+            "Customer",
+            order.getId(),
+            "CONFIRMED"
         );
 
         cart.getItems().clear();
@@ -131,8 +132,13 @@ public class OrderService {
         Order order = orderRepo.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
 
-        order.setStatus(status.toUpperCase());
+        String upperStatus = status.toUpperCase();
+        order.setStatus(upperStatus);
         order.setUpdatedAt(LocalDateTime.now());
+
+        if (List.of("SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED").contains(upperStatus)) {
+            emailService.sendOrderStatusEmail(order.getUserEmail(), "Customer", order.getId(), upperStatus);
+        }
 
         return orderRepo.save(order);
     }

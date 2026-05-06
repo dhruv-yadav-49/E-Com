@@ -79,4 +79,28 @@ public class AdminService {
                 topProducts,
                 recentOrders);
     }
+
+    public com.telu.ecom_project.dto.AnalyticsResponse getAnalytics() {
+        java.time.LocalDateTime sixMonthsAgo = java.time.LocalDateTime.now().minusMonths(6);
+        
+        java.util.List<Object[]> monthlyRevRaw = orderRepo.getMonthlyRevenue(sixMonthsAgo);
+        java.util.Map<String, BigDecimal> monthlyRevenue = new java.util.LinkedHashMap<>();
+        for (Object[] row : monthlyRevRaw) {
+            monthlyRevenue.put((String) row[0], new BigDecimal(row[1].toString()));
+        }
+
+        java.util.List<Object[]> salesCatRaw = orderItemRepo.getSalesByCategory();
+        java.util.Map<String, Long> salesByCategory = new java.util.LinkedHashMap<>();
+        for (Object[] row : salesCatRaw) {
+            salesByCategory.put((String) row[0], new BigDecimal(row[1].toString()).longValue());
+        }
+
+        java.util.List<Object[]> usersRaw = userRepo.getNewUsersByMonth(sixMonthsAgo);
+        java.util.Map<String, Long> newUsersByMonth = new java.util.LinkedHashMap<>();
+        for (Object[] row : usersRaw) {
+            newUsersByMonth.put((String) row[0], ((Number) row[1]).longValue());
+        }
+
+        return new com.telu.ecom_project.dto.AnalyticsResponse(monthlyRevenue, salesByCategory, newUsersByMonth);
+    }
 }

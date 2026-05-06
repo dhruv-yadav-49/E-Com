@@ -26,7 +26,7 @@ export default function Login() {
         userId: data.userId,
         fullName: data.email, // fallback until profile API
       };
-      login(userData, data.accessToken);
+      login(userData, data.accessToken, data.refreshToken);
       await fetchCart();
       toast.success(`Welcome back, ${data.email}!`);
       navigate('/');

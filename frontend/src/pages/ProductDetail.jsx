@@ -22,6 +22,11 @@ export default function ProductDetail() {
   const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
   const [loading, setLoading] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [similarProducts, setSimilarProducts] = useState([]);
+  const [wishlistIds, setWishlistIds] = useState(new Set());
+  const [pincode, setPincode] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState(null);
+  const [deliveryError, setDeliveryError] = useState('');
 
   useEffect(() => {
     fetchAll();
@@ -30,19 +35,22 @@ export default function ProductDetail() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [pRes, rRes, avgRes] = await Promise.all([
+      const [pRes, rRes, avgRes, simRes] = await Promise.all([
         API.get(`/api/products/${id}`),
         API.get(`/api/product/${id}/reviews`),
         API.get(`/api/product/${id}/avg-rating`),
+        API.get(`/api/products/${id}/similar`),
       ]);
       setProduct(pRes.data);
       setReviews(rRes.data);
       setAvgRating(avgRes.data || 0);
+      setSimilarProducts(simRes.data || []);
       if (user?.email) {
         try {
           const wRes = await API.get('/api/wishlist/get', { params: { userEmail: user.email } });
           const ids = new Set((wRes.data?.data?.products || []).map(p => p.id));
           setInWishlist(ids.has(parseInt(id)));
+          setWishlistIds(ids);
         } catch {}
       }
     } catch { toast.error('Product not found'); navigate('/'); }
@@ -63,12 +71,54 @@ export default function ProductDetail() {
     try {
       if (inWishlist) {
         await API.delete(`/api/wishlist/remove/${id}`, { params: { userEmail: user.email } });
-        setInWishlist(false); toast.success('Removed from wishlist');
+        setInWishlist(false);
+        setWishlistIds(prev => { const n = new Set(prev); n.delete(parseInt(id)); return n; });
+        toast.success('Removed from wishlist');
       } else {
         await API.post(`/api/wishlist/add/${id}`, null, { params: { userEmail: user.email } });
-        setInWishlist(true); toast.success('Added to wishlist!');
+        setInWishlist(true);
+        setWishlistIds(prev => new Set([...prev, parseInt(id)]));
+        toast.success('Added to wishlist!');
       }
     } catch (err) { toast.error(err.response?.data?.message || 'Wishlist action failed'); }
+  };
+
+  const handleWishlistToggle = async (productId) => {
+    if (!user?.email) { navigate('/login'); return; }
+    try {
+      if (wishlistIds.has(productId)) {
+        await API.delete(`/api/wishlist/remove/${productId}`, { params: { userEmail: user.email } });
+        setWishlistIds(prev => { const n = new Set(prev); n.delete(productId); return n; });
+        if(productId === parseInt(id)) setInWishlist(false);
+        toast.success('Removed from wishlist');
+      } else {
+        await API.post(`/api/wishlist/add/${productId}`, null, { params: { userEmail: user.email } });
+        setWishlistIds(prev => new Set([...prev, productId]));
+        if(productId === parseInt(id)) setInWishlist(true);
+        toast.success('Added to wishlist!');
+      }
+    } catch (err) { toast.error('Wishlist action failed'); }
+  };
+
+  const handleAddToCartSimilar = async (productId) => {
+    try {
+      await addToCart(productId, 1);
+      toast.success('Added to cart!');
+    } catch (err) {
+      toast.error('Failed to add to cart');
+    }
+  };
+
+  const checkDelivery = async () => {
+    if(!pincode.trim()) return;
+    try {
+      setDeliveryError('');
+      setDeliveryDate(null);
+      const res = await API.get('/api/delivery/delivery-estimate', { params: { pincode } });
+      setDeliveryDate(res.data);
+    } catch (err) {
+      setDeliveryError('Invalid pincode or not serviceable');
+    }
   };
 
   const handleReview = async (e) => {
@@ -169,6 +219,22 @@ export default function ProductDetail() {
               </div>
             </div>
 
+            <div className="delivery-check" style={{ marginTop: '1rem', padding: '1rem', background: 'var(--bg2)', borderRadius: '8px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}><Truck size={16} style={{display:'inline', marginRight:'4px'}}/> Check Delivery Estimate</label>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input 
+                  type="text" 
+                  placeholder="Enter Pincode (e.g. 400001)" 
+                  value={pincode} 
+                  onChange={(e) => setPincode(e.target.value)} 
+                  style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border)', flex: 1, background: 'var(--bg)' }}
+                />
+                <button className="btn-secondary" onClick={checkDelivery} style={{ padding: '8px 16px' }}>Check</button>
+              </div>
+              {deliveryDate && <p style={{ color: 'var(--green)', marginTop: '8px', fontSize: '0.9rem', fontWeight: '500' }}>Estimated Delivery: {deliveryDate}</p>}
+              {deliveryError && <p style={{ color: 'var(--red)', marginTop: '8px', fontSize: '0.9rem' }}>{deliveryError}</p>}
+            </div>
+
             <div className="detail-actions">
               <button
                 className="btn-primary btn-lg"
@@ -239,6 +305,25 @@ export default function ProductDetail() {
             ))}
           </div>
         </div>
+
+        {/* Similar Products Section */}
+        {similarProducts.length > 0 && (
+          <div className="similar-products-section" style={{ marginTop: '4rem' }}>
+            <h2 style={{ marginBottom: '1.5rem' }}>Similar Products</h2>
+            <div className="products-grid">
+              {similarProducts.map(prod => (
+                <ProductCard
+                  key={prod.id}
+                  product={prod}
+                  inWishlist={wishlistIds.has(prod.id)}
+                  onAddToCart={() => handleAddToCartSimilar(prod.id)}
+                  onWishlist={() => handleWishlistToggle(prod.id)}
+                  onClick={() => navigate(`/product/${prod.id}`)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -256,6 +341,61 @@ function StarRating({ rating }) {
         />
       ))}
       {rating > 0 && <span className="rating-num">{rating.toFixed(1)}</span>}
+    </div>
+  );
+}
+
+function ProductCard({ product, inWishlist, onAddToCart, onWishlist, onClick }) {
+  const isDiscounted = product.finalPrice && product.finalPrice < product.price;
+  return (
+    <div className="product-card">
+      <div className="product-img-wrap" onClick={onClick}>
+        {product.imageUrl ? (
+          <img src={product.imageUrl} alt={product.name} />
+        ) : (
+          <div className="product-img-placeholder"><Package size={48} /></div>
+        )}
+        {isDiscounted && (
+          <span className="badge-discount">
+            -{Math.round(((product.price - product.finalPrice) / product.price) * 100)}%
+          </span>
+        )}
+        {!product.productAvailable && <span className="badge-oos">Out of Stock</span>}
+        {product.lowStock && product.productAvailable && (
+          <span className="badge-low-stock">⚠ Only {product.stockQuantity} left!</span>
+        )}
+      </div>
+      <div className="product-info">
+        <p className="product-brand">{product.brand || product.category?.name}</p>
+        <h3 className="product-name" onClick={onClick}>{product.name}</h3>
+        <div className="product-price">
+          {isDiscounted ? (
+            <>
+              <span className="price-final">₹{product.finalPrice}</span>
+              <span className="price-original">₹{product.price}</span>
+            </>
+          ) : (
+            <span className="price-final">₹{product.price}</span>
+          )}
+        </div>
+        <div className="product-actions">
+          <button
+            className="btn-cart"
+            onClick={onAddToCart}
+            disabled={!product.productAvailable}
+            title={!product.productAvailable ? 'Out of Stock' : 'Add to Cart'}
+          >
+            <ShoppingCart size={16} />
+            {product.productAvailable ? 'Add to Cart' : 'Out of Stock'}
+          </button>
+          <button
+            className={`btn-wishlist ${inWishlist ? 'active' : ''}`}
+            onClick={onWishlist}
+          >
+            <Heart size={18} fill={inWishlist ? 'currentColor' : 'none'} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

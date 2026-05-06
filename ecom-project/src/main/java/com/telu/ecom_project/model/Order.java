@@ -45,6 +45,8 @@ public class Order {
     private String razorpaySignature;
     private String paymentStatus;
 
+    private LocalDateTime createdAt = LocalDateTime.now();
+
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
