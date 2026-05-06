@@ -91,20 +91,13 @@ public class WishlistService {
 
         if(wishlist == null) throw new RuntimeException("Wishlist not found");
 
-        // DEBUG: print what IDs are in the wishlist vs what was requested
-        System.out.println("DEBUG moveToCart: requested productId = " + productId);
-        wishlist.getProducts().forEach(p ->
-            System.out.println("DEBUG moveToCart: wishlist has productId = " + p.getId() + " (type: " + p.getId().getClass().getName() + ")")
-        );
-
-        boolean exists = wishlist.getProducts().stream().anyMatch(p -> p.getId().equals(productId));
-        System.out.println("DEBUG moveToCart: exists = " + exists);
+        boolean exists = wishlist.getProducts().stream().anyMatch(p -> p.getId().equals(Integer.valueOf(productId)));
 
         if(!exists) throw new RuntimeException("Product not in wishlist");
 
         cartService.addProductToCart(email, productId, 1);
 
-        wishlist.getProducts().removeIf(p -> p.getId().equals(productId));
+        wishlist.getProducts().removeIf(p -> p.getId().equals(Integer.valueOf(productId)));
 
         wishlistRepo.save(wishlist);
 

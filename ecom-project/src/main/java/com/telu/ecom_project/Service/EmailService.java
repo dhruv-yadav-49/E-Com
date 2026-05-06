@@ -40,7 +40,7 @@ public class EmailService {
         RestTemplate rest = new RestTemplate();
 
         Map<String, Object> body = Map.of(
-                "from", "AaoStays <onboarding@resend.dev>",
+                "from", "ShopZen <onboarding@resend.dev>",
                 "to", new String[] { toEmail },
                 "subject", "Verify your email",
                 "html", "<p>Click below to verify:</p><a href=\"" + verificationLink + "\">Verify Email</a>");
@@ -60,11 +60,11 @@ public class EmailService {
         RestTemplate rest = new RestTemplate();
 
         Map<String, Object> body = Map.of(
-                "from", "AaoStays <onboarding@resend.dev>",
+                "from", "ShopZen <onboarding@resend.dev>",
                 "to", new String[] { toEmail },
-                "subject", "Login Alert - AaoStays",
+                "subject", "Login Alert - ShopZen",
                 "html", "<p>Hello <b>" + userName + "</b>,</p>"
-                        + "<p>You have successfully logged in to your AaoStays account.</p>"
+                        + "<p>You have successfully logged in to your ShopZen account.</p>"
                         + "<p>If this wasn't you, please reset your password immediately.</p>");
 
         HttpHeaders headers = new HttpHeaders();
@@ -74,5 +74,46 @@ public class EmailService {
         HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
 
         rest.exchange(RESEND_URL, Objects.requireNonNull(HttpMethod.POST), request, String.class);
+    }
+
+    public void sendOrderStatusEmail(String toEmail, String userName, Integer orderId, String status) {
+        RestTemplate rest = new RestTemplate();
+        
+        String subject = "Order Update: " + status;
+        String htmlMessage = "<p>Hello <b>" + userName + "</b>,</p>" +
+                             "<p>Your order <b>#" + orderId + "</b> is now: <b>" + status + "</b>.</p>" +
+                             "<p>Thank you for shopping with ShopZen!</p>";
+
+        if ("CONFIRMED".equalsIgnoreCase(status)) {
+            subject = "Order Confirmed - ShopZen";
+        } else if ("DELIVERED".equalsIgnoreCase(status)) {
+            subject = "Your Order has been Delivered!";
+        }
+
+        Map<String, Object> body = Map.of(
+                "from", "ShopZen <onboarding@resend.dev>",
+                "to", new String[] { toEmail },
+                "subject", subject,
+                "html", htmlMessage);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(Objects.requireNonNull(resendApiKey));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        rest.exchange(RESEND_URL, Objects.requireNonNull(HttpMethod.POST), request, String.class);
+    }
+
+    public void sendEmail(String to, String subject, String body){
+
+        SimpleMailMessage message = new SimpleMailMessage();
+
+
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+
+        mailSender.send(message);
     }
 }

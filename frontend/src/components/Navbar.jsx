@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import toast from 'react-hot-toast';
-import { ShoppingCart, Heart, Package, LogOut, LogIn, User, Menu, X } from 'lucide-react';
+import { ShoppingCart, Heart, Package, LogOut, LogIn, User, Menu, X, LayoutDashboard } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Navbar() {
@@ -35,6 +35,11 @@ export default function Navbar() {
               <Link to="/orders" className="nav-link" onClick={() => setMenuOpen(false)}>
                 <Package size={16} /> Orders
               </Link>
+              {user?.role === 'ADMIN' && (
+                <Link to="/admin/dashboard" className="nav-link nav-link-admin" onClick={() => setMenuOpen(false)}>
+                  <LayoutDashboard size={16} /> Dashboard
+                </Link>
+              )}
             </>
           )}
         </div>

@@ -11,6 +11,7 @@ import com.telu.ecom_project.repo.ProductRepo;
 import com.telu.ecom_project.repo.ReviewRepo;
 
 @Service
+@SuppressWarnings("null")
 public class ReviewService {
     
     @Autowired
@@ -49,5 +50,18 @@ public class ReviewService {
             .orElse(0);
 
         return avg;
+    }
+
+    // 🔹 Admin: delete any review by ID
+    public void deleteReview(Integer reviewId) {
+        if (!reviewRepo.existsById(reviewId)) {
+            throw new RuntimeException("Review not found: " + reviewId);
+        }
+        reviewRepo.deleteById(reviewId);
+    }
+
+    // 🔹 Admin: get all reviews for a product (for moderation)
+    public List<Review> getAllReviewsForProduct(int productId) {
+        return reviewRepo.findByProductId(productId);
     }
 }

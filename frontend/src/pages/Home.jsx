@@ -74,7 +74,9 @@ export default function Home() {
     try {
       await addToCart(productId, 1);
       toast.success('Added to cart!');
-    } catch { toast.error('Failed to add to cart'); }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to add to cart');
+    }
   };
 
   const handleWishlist = async (productId) => {
@@ -195,6 +197,9 @@ function ProductCard({ product, inWishlist, onAddToCart, onWishlist, onClick }) 
           </span>
         )}
         {!product.productAvailable && <span className="badge-oos">Out of Stock</span>}
+        {product.lowStock && product.productAvailable && (
+          <span className="badge-low-stock">⚠ Only {product.stockQuantity} left!</span>
+        )}
       </div>
       <div className="product-info">
         <p className="product-brand">{product.brand || product.category?.name}</p>
@@ -214,9 +219,10 @@ function ProductCard({ product, inWishlist, onAddToCart, onWishlist, onClick }) 
             className="btn-cart"
             onClick={onAddToCart}
             disabled={!product.productAvailable}
+            title={!product.productAvailable ? 'Out of Stock' : 'Add to Cart'}
           >
             <ShoppingCart size={16} />
-            Add to Cart
+            {product.productAvailable ? 'Add to Cart' : 'Out of Stock'}
           </button>
           <button
             className={`btn-wishlist ${inWishlist ? 'active' : ''}`}

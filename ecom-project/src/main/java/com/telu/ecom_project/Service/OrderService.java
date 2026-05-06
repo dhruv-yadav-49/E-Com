@@ -7,6 +7,7 @@ import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 
 import com.telu.ecom_project.model.Cart;
 import com.telu.ecom_project.model.CartItem;
@@ -20,6 +21,7 @@ import com.telu.ecom_project.repo.ProductRepo;
 import jakarta.transaction.Transactional;
 
 @Service
+@SuppressWarnings("null")
 public class OrderService {
     
     @Autowired
@@ -34,6 +36,9 @@ public class OrderService {
     @Autowired
     private ProductService productService; // For stock alerts
 
+    @Autowired
+    private EmailService emailService;
+
     @Transactional
     public Order createOrder(String email, String paymentMethod){
 
@@ -47,6 +52,7 @@ public class OrderService {
         order.setUserEmail(email);
         order.setStatus("PENDING_PAYMENT");   // 🔥 IMPORTANT
         order.setPaymentMethod(paymentMethod);
+        order.setUpdatedAt(LocalDateTime.now());
 
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal total = BigDecimal.ZERO;
@@ -107,10 +113,34 @@ public class OrderService {
         }
 
         order.setStatus("CONFIRMED");
+        order.setUpdatedAt(LocalDateTime.now());
         orderRepo.save(order);
+
+        emailService.sendOrderStatusEmail(
+            order.getUserEmail(),
+            "Customer",
+            order.getId(),
+            "CONFIRMED"
+        );
 
         cart.getItems().clear();
         cartRepo.save(cart);
+    }
+
+    public Order updateOrderStatus(Integer orderId, String status){
+
+        Order order = orderRepo.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        String upperStatus = status.toUpperCase();
+        order.setStatus(upperStatus);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        if (List.of("SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED").contains(upperStatus)) {
+            emailService.sendOrderStatusEmail(order.getUserEmail(), "Customer", order.getId(), upperStatus);
+        }
+
+        return orderRepo.save(order);
     }
 
     public List<Order> getOrdersByUserEmail(String email){

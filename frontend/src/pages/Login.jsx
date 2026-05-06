@@ -26,7 +26,7 @@ export default function Login() {
         userId: data.userId,
         fullName: data.email, // fallback until profile API
       };
-      login(userData, data.accessToken);
+      login(userData, data.accessToken, data.refreshToken);
       await fetchCart();
       toast.success(`Welcome back, ${data.email}!`);
       navigate('/');
@@ -60,7 +60,12 @@ export default function Login() {
             </div>
           </div>
           <div className="input-group">
-            <label>Password</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '0.8rem', color: 'var(--primary)', textDecoration: 'none' }}>
+                Forgot Password?
+              </Link>
+            </div>
             <div className="input-wrapper">
               <Lock size={18} className="input-icon" />
               <input

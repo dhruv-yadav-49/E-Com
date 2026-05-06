@@ -18,6 +18,7 @@ import com.telu.ecom_project.repo.CategoryRepo;
 import com.telu.ecom_project.repo.ProductRepo;
 
 @Service
+@SuppressWarnings("null")
 public class ProductService {
     
     @Autowired
@@ -233,6 +234,24 @@ public class ProductService {
     public List<Product> getProductsByStockStatus(boolean stockStatus, String sortBy){
         Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE, Sort.by(sortBy));
         return repo.findByProductAvailable(stockStatus, pageable).getContent();
+    }
+
+    public List<Product> compareProducts(List<Integer> ids) {
+        return repo.findAllById(ids);
+    }
+
+    public List<Product> getSimilarProducts(int id, String sortBy, int page, int size){
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortBy));
+
+        Product product = repo.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+
+        return repo.findByCategoryAndIdNot(product.getCategory(), product.getId(), pageable).getContent();
+    }
+
+    public Page<Product> getProductsByBrand(String brand, int page, int size, String sort){
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
+
+        return repo.findByBrand(brand, pageable);
     }
 }
 

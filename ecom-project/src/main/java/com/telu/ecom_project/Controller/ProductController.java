@@ -185,4 +185,34 @@ public class ProductController {
         List<Product> products = service.getProductsByStockStatus(stockStatus, sortBy);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/products/compare")
+    public ResponseEntity<List<Product>> compareProducts(@RequestParam List<Integer> ids) {
+        return ResponseEntity.ok(service.compareProducts(ids));
+    }
+
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
+    @GetMapping("/products/{id}/similar")
+    public ResponseEntity<List<Product>> getSimilarProducts(
+        @PathVariable int id,
+        @RequestParam(defaultValue = "id") String sortBy,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "5") int size
+    ){
+        List<Product> products = service.getSimilarProducts(id, sortBy, page, size);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
+
+    @GetMapping("/products/brand/{brand}")
+    public ResponseEntity<Page<Product>> getProductsByBrand(
+            @PathVariable String brand,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<Product> products = service.getProductsByBrand(brand, page, size, sortBy);
+        return new ResponseEntity<>(products, HttpStatus.OK);
+    }
+
 }

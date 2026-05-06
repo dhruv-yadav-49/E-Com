@@ -56,6 +56,13 @@ public class CartService {
         Product product = productRepo.findById(productId)
             .orElseThrow(() -> new RuntimeException("Product not found"));
 
+        if (!product.isProductAvailable() || product.getStockQuantity() <= 0) {
+            throw new RuntimeException("Product is out of stock");
+        }
+        if (product.getStockQuantity() < qty) {
+            throw new RuntimeException("Only " + product.getStockQuantity() + " item(s) left in stock");
+        }
+
         // Check if product already exists in cart
         CartItem existingItem = cart.getItems().stream()
             .filter(item -> item.getProduct() != null && item.getProduct().getId().equals(productId))
@@ -63,7 +70,11 @@ public class CartService {
             .orElse(null);
 
         if (existingItem != null) {
-            existingItem.setQuantity(existingItem.getQuantity() + (qty != null ? qty : 0));
+            int newQty = existingItem.getQuantity() + (qty != null ? qty : 0);
+            if (newQty > product.getStockQuantity()) {
+                throw new RuntimeException("Cannot add more than " + product.getStockQuantity() + " item(s)");
+            }
+            existingItem.setQuantity(newQty);
         } else {
             CartItem item = new CartItem();
             item.setProduct(product);
@@ -94,6 +105,13 @@ public class CartService {
         Product product = productRepo.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
+        if (!product.isProductAvailable() || product.getStockQuantity() <= 0) {
+            throw new RuntimeException("Product is out of stock");
+        }
+        if (product.getStockQuantity() < quantity) {
+            throw new RuntimeException("Only " + product.getStockQuantity() + " item(s) left in stock");
+        }
+
         // Check if this product is already in the cart
         CartItem existingItem = cart.getItems().stream()
                 .filter(item -> item.getProduct() != null && item.getProduct().getId().equals(productId))
@@ -101,7 +119,11 @@ public class CartService {
                 .orElse(null);
 
         if(existingItem != null){
-            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            int newQty = existingItem.getQuantity() + quantity;
+            if (newQty > product.getStockQuantity()) {
+                throw new RuntimeException("Cannot add more than " + product.getStockQuantity() + " item(s)");
+            }
+            existingItem.setQuantity(newQty);
         } else {
             CartItem item = new CartItem();
             item.setProduct(product);
