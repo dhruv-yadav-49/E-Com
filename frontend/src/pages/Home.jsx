@@ -50,7 +50,7 @@ export default function Home() {
     try {
       const res = await API.get('/api/categories');
       setCategories(res.data);
-    } catch {}
+    } catch { }
   };
 
   const fetchWishlist = async () => {
@@ -58,7 +58,7 @@ export default function Home() {
       const res = await API.get('/api/wishlist/get', { params: { userEmail: user.email } });
       const ids = new Set((res.data?.data?.products || []).map(p => p.id));
       setWishlistIds(ids);
-    } catch {}
+    } catch { }
   };
 
   const handleSearch = async (e) => {
