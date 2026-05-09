@@ -37,15 +37,13 @@ public class CategoryController {
         return ResponseEntity.ok(service.createCategory(name, description, image));
     }
 
-    // 🔹 Get all categories (public — both USER and ADMIN)
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    // 🔹 Get all categories (public)
     @GetMapping("/categories")
     public ResponseEntity<List<Category>> getAll() {
         return ResponseEntity.ok(service.getAllCategories());
     }
 
     // 🔹 Get category by ID
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/category/{id}")
     public ResponseEntity<Category> getById(@PathVariable int id) {
         return ResponseEntity.ok(service.getCategoryById(id));

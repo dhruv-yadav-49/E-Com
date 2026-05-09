@@ -3,6 +3,7 @@ import React from "react";
 import Home from "./components/Home";
 import Navbar from "./components/Navbar";
 import AddProduct from "./components/AddProduct";
+import AdminControl from "./components/AdminControl";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/add_product" element={<AddProduct />} />
+          <Route path="/admin" element={<AdminControl />} />
         </Routes>
       </BrowserRouter>
   );

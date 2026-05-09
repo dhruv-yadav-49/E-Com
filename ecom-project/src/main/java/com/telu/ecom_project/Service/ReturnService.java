@@ -26,6 +26,9 @@ public class ReturnService {
     @Autowired
     private ProductRepo productRepo;
 
+    @Autowired
+    private EmailService emailService;
+
     // 🔸 Submit a return request
     public ReturnRequest submitReturnRequest(Long orderId, String reason, String type, String userEmail) {
         ReturnRequest request = new ReturnRequest();
@@ -84,6 +87,14 @@ public class ReturnService {
             }
         }
 
+        // 🔔 Send approval notification email
+        try {
+            emailService.sendReturnStatusEmail(
+                request.getUserEmail(), request.getOrderId(), request.getType(), "APPROVED", note);
+        } catch (Exception e) {
+            System.err.println("Failed to send return approval email: " + e.getMessage());
+        }
+
         return returnRepo.save(request);
     }
 
@@ -95,6 +106,14 @@ public class ReturnService {
         request.setStatus("REJECTED");
         request.setNote(note);
         request.setResolvedAt(LocalDateTime.now());
+
+        // 🔔 Send rejection notification email
+        try {
+            emailService.sendReturnStatusEmail(
+                request.getUserEmail(), request.getOrderId(), request.getType(), "REJECTED", note);
+        } catch (Exception e) {
+            System.err.println("Failed to send return rejection email: " + e.getMessage());
+        }
 
         return returnRepo.save(request);
     }

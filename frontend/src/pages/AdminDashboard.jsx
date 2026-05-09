@@ -164,6 +164,37 @@ export default function AdminDashboard() {
     return null;
   };
 
+  const [banner, setBanner] = useState({ title: '', subtitle: '', image: null, buttonText: '', buttonUrl: '', validUntil: '' });
+  const [flashSale, setFlashSale] = useState({ title: '', discountDescription: '', startTime: '', endTime: '', active: true });
+
+  const handleBannerSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('title', banner.title);
+    formData.append('subtitle', banner.subtitle);
+    formData.append('image', banner.image);
+    formData.append('buttonText', banner.buttonText);
+    formData.append('buttonUrl', banner.buttonUrl);
+    formData.append('validUntil', banner.validUntil);
+
+    try {
+      await API.post('/api/admin/banners', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Banner created successfully!');
+      setBanner({ title: '', subtitle: '', image: null, buttonText: '', buttonUrl: '', validUntil: '' });
+    } catch { toast.error('Failed to create banner'); }
+  };
+
+  const handleFlashSaleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await API.post('/api/admin/flash-sales', flashSale);
+      toast.success('Flash Sale created successfully!');
+      setFlashSale({ title: '', discountDescription: '', startTime: '', endTime: '', active: true });
+    } catch { toast.error('Failed to create flash sale'); }
+  };
+
   return (
     <div className="adm-page">
       {/* ── Hero Banner ── */}
@@ -195,7 +226,79 @@ export default function AdminDashboard() {
           <StatCard label="Avg. Order Value" rawValue={avgOrderVal}   prefix="₹" icon={Activity}    color="var(--orange)"  bg="rgba(249,115,22,.15)"  sub="Revenue ÷ orders" />
         </div>
 
-        {/* ── Row 2: Product Inventory Stats ── */}
+        {/* ── Row 2: Marketing Management ── */}
+        <div style={{ marginBottom: '28px' }}>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Zap size={20} style={{ color: 'var(--orange)' }}/> Marketing Management
+          </h2>
+          <div className="adm-bottom-grid">
+             {/* Banner Form */}
+             <div className="adm-card">
+               <div className="adm-card-header">
+                 <div className="adm-card-title">
+                   <Box size={18} style={{ color: 'var(--accent2)' }} />
+                   <h2>Promotional Banners</h2>
+                 </div>
+               </div>
+               <form onSubmit={handleBannerSubmit} style={{ padding: '20px' }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Title</label>
+                    <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={banner.title} onChange={e => setBanner({...banner, title: e.target.value})} required />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Subtitle</label>
+                    <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={banner.subtitle} onChange={e => setBanner({...banner, subtitle: e.target.value})} required />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Image</label>
+                    <input type="file" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} onChange={e => setBanner({...banner, image: e.target.files[0]})} required />
+                  </div>
+                  <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Button Text</label>
+                      <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={banner.buttonText} onChange={e => setBanner({...banner, buttonText: e.target.value})} required />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Valid Until</label>
+                      <input type="date" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={banner.validUntil} onChange={e => setBanner({...banner, validUntil: e.target.value})} required />
+                    </div>
+                  </div>
+                  <button type="submit" className="btn-primary" style={{ width: '100%' }}>Create Banner</button>
+               </form>
+             </div>
+
+             {/* Flash Sale Form */}
+             <div className="adm-card">
+               <div className="adm-card-header">
+                 <div className="adm-card-title">
+                   <Zap size={18} style={{ color: 'var(--yellow)' }} />
+                   <h2>Flash Sale</h2>
+                 </div>
+               </div>
+               <form onSubmit={handleFlashSaleSubmit} style={{ padding: '20px' }}>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Sale Title</label>
+                    <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.title} onChange={e => setFlashSale({...flashSale, title: e.target.value})} required />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Description</label>
+                    <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} placeholder="e.g. 50% Off" value={flashSale.discountDescription} onChange={e => setFlashSale({...flashSale, discountDescription: e.target.value})} required />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Start Time</label>
+                    <input type="datetime-local" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.startTime} onChange={e => setFlashSale({...flashSale, startTime: e.target.value})} required />
+                  </div>
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>End Time</label>
+                    <input type="datetime-local" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.endTime} onChange={e => setFlashSale({...flashSale, endTime: e.target.value})} required />
+                  </div>
+                  <button type="submit" className="btn-primary" style={{ width: '100%', background: 'var(--yellow)' }}>Start Flash Sale</button>
+               </form>
+             </div>
+          </div>
+        </div>
+
+        {/* ── Row 3: Product Inventory Stats ── */}
         <div className="adm-stat-grid" style={{ marginBottom: 28 }}>
           <StatCard label="Total Products"  rawValue={totalProducts} icon={Package}      color="var(--accent2)" bg="rgba(99,102,241,.15)"  sub="In catalogue" />
           <StatCard label="Out of Stock"    rawValue={outOfStock}    icon={XCircle}       color="var(--red)"     bg="rgba(239,68,68,.15)"   sub="Needs restock" />

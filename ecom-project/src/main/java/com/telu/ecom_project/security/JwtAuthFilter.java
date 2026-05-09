@@ -40,8 +40,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             token = authHeader.substring(7);
         }
 
+        System.out.println("JwtAuthFilter: Processing request to " + request.getRequestURI());
         if (token != null && jwtService.validateToken(token)) {
-
+            System.out.println("JwtAuthFilter: Token is valid for " + request.getRequestURI());
             String email = jwtService.getEmailFromToken(token);
 
             User user = userRepo.findByEmail(email).orElse(null);
@@ -49,7 +50,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             if (user != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 String role = user.getUserType().name();
-                System.out.println("JwtAuthFilter: User " + email + " has role " + role); // DEBUG
+                System.out.println("JwtAuthFilter: Authenticating User " + email + " with role " + role);
 
                 List<GrantedAuthority> authorities = List.of(
                         new SimpleGrantedAuthority("ROLE_" + role));

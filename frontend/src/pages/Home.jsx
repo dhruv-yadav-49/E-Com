@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import API from '../api/axios';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-import { Search, ShoppingCart, Heart, Star, Filter, X, ChevronDown, Package } from 'lucide-react';
+import { Search, ShoppingCart, Heart, Filter, Package, ChevronDown } from 'lucide-react';
+import BannerCarousel from '../components/BannerCarousel';
+import FlashSaleSection from '../components/FlashSaleSection';
+import NewsletterBox from '../components/NewsletterBox';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -17,7 +20,6 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('id');
   const [wishlistIds, setWishlistIds] = useState(new Set());
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     fetchProducts();
@@ -103,6 +105,8 @@ export default function Home() {
 
   return (
     <div className="page-wrapper">
+      <BannerCarousel />
+
       {/* Hero */}
       <section className="hero">
         <div className="hero-content">
@@ -122,6 +126,8 @@ export default function Home() {
       </section>
 
       <div className="container">
+        <FlashSaleSection />
+
         {/* Filters */}
         <div className="filters-bar">
           <div className="category-pills">
@@ -176,6 +182,8 @@ export default function Home() {
             ))}
           </div>
         )}
+
+        <NewsletterBox />
       </div>
     </div>
   );

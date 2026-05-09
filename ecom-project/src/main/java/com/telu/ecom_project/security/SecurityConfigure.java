@@ -44,12 +44,19 @@ public class SecurityConfigure {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
-                        // ADMIN-only mutations on products (must come BEFORE the broad rule)
+                        .requestMatchers(HttpMethod.GET, "/api/banners/active").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/flash-sales").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/product/*/reviews").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/product/*/avg-rating").permitAll()
+                        .requestMatchers("/api/newsletter/subscribe").permitAll()
+                        
+                        // ADMIN-only mutations
                         .requestMatchers(HttpMethod.POST,   "/api/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/api/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
-                        // Read products — both USER and ADMIN
-                        .requestMatchers("/api/products/**").hasAnyRole("USER", "ADMIN")
+                        
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
@@ -84,10 +91,11 @@ public class SecurityConfigure {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOriginPatterns(List.of("http://localhost:5173", "http://localhost:5174", "*"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+        config.setMaxAge(3600L); // 1 hour cache
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
