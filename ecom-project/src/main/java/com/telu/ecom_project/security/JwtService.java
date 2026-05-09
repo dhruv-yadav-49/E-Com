@@ -72,6 +72,7 @@ public class JwtService {
                     .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException ex) {
+            System.err.println("JwtService: Token validation failed: " + ex.getMessage());
             return false;
         }
     }

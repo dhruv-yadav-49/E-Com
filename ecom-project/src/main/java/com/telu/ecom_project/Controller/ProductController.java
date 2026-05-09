@@ -32,13 +32,11 @@ public class ProductController {
     @Autowired
     private ProductService service;
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products")
     public ResponseEntity<List<Product>> getAllProducts(){
         return new ResponseEntity<>(service.getAllProducts(), HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/{id}")
     public ResponseEntity<Product> getProduct(@PathVariable int id){
 
@@ -95,14 +93,12 @@ public class ProductController {
         return ResponseEntity.ok("Product deleted successfully");
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/search")
     public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword){
         List<Product> products = service.searchProducts(keyword);
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/page")
     public ResponseEntity<Page<Product>> getProducts(
         @RequestParam(defaultValue = "0") int page,
@@ -112,7 +108,6 @@ public class ProductController {
         return ResponseEntity.ok(service.getProducts(page, size, sortBy));
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/category")
     public ResponseEntity<Page<Product>> getProductsByCategory(
         @RequestParam String category,
@@ -165,7 +160,6 @@ public class ProductController {
         return ResponseEntity.ok("Products of Category " + categoryId + "are deleted successfully!");
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/price-range")
     public ResponseEntity<List<Product>>getProductsByPriceRange(
         @RequestParam BigDecimal minPrice,
@@ -176,7 +170,6 @@ public class ProductController {
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/stock-status")
     public ResponseEntity<List<Product>>getProductsByStockStatus(
         @RequestParam boolean stockStatus,
@@ -186,13 +179,11 @@ public class ProductController {
         return new ResponseEntity<>(products, HttpStatus.OK);
     }
 
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/products/compare")
     public ResponseEntity<List<Product>> compareProducts(@RequestParam List<Integer> ids) {
         return ResponseEntity.ok(service.compareProducts(ids));
     }
 
-    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     @GetMapping("/products/{id}/similar")
     public ResponseEntity<List<Product>> getSimilarProducts(
         @PathVariable int id,

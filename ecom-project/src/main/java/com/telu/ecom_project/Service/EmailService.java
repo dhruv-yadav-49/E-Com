@@ -105,6 +105,33 @@ public class EmailService {
         rest.exchange(RESEND_URL, Objects.requireNonNull(HttpMethod.POST), request, String.class);
     }
 
+    public void sendReturnStatusEmail(String toEmail, Long orderId, String type, String status, String note) {
+        RestTemplate rest = new RestTemplate();
+
+        String typeLabel = "REFUND".equalsIgnoreCase(type) ? "Refund" : "Return/Exchange";
+        String statusLabel = "APPROVED".equalsIgnoreCase(status) ? "Approved ✅" : "Rejected ❌";
+        String subject = typeLabel + " " + statusLabel + " - ShopZen";
+
+        String htmlMessage = "<p>Hello,</p>" +
+                "<p>Your <b>" + typeLabel + "</b> request for order <b>#" + orderId + "</b> has been <b>" + statusLabel + "</b>.</p>" +
+                (note != null && !note.isEmpty() ? "<p><b>Note:</b> " + note + "</p>" : "") +
+                "<p>Thank you for shopping with ShopZen!</p>";
+
+        Map<String, Object> body = Map.of(
+                "from", "ShopZen <onboarding@resend.dev>",
+                "to", new String[] { toEmail },
+                "subject", subject,
+                "html", htmlMessage);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(Objects.requireNonNull(resendApiKey));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        rest.exchange(RESEND_URL, Objects.requireNonNull(HttpMethod.POST), request, String.class);
+    }
+
     public void sendEmail(String to, String subject, String body){
 
         SimpleMailMessage message = new SimpleMailMessage();
@@ -115,5 +142,23 @@ public class EmailService {
         message.setText(body);
 
         mailSender.send(message);
+    }
+
+    public void sendNewsletterEmail(String toEmail, String subject, String content) {
+        RestTemplate rest = new RestTemplate();
+
+        Map<String, Object> body = Map.of(
+                "from", "ShopZen <onboarding@resend.dev>",
+                "to", new String[] { toEmail },
+                "subject", subject,
+                "html", "<div>" + content + "</div><hr><p><small>You are receiving this because you subscribed to our newsletter. <a href='#'>Unsubscribe</a></small></p>");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(Objects.requireNonNull(resendApiKey));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+        rest.exchange(RESEND_URL, Objects.requireNonNull(HttpMethod.POST), request, String.class);
     }
 }
