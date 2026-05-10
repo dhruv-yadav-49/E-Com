@@ -34,19 +34,29 @@ public class AdminService {
     public DashboardStats getDashboardStats() {
 
         // Revenue & Orders
-        BigDecimal totalRevenue = orderRepo.getTotalRevenue();
-        Long totalOrders        = orderRepo.getTotalOrders();
-        Long totalUsers         = userRepo.getActiveUsers();
+        BigDecimal totalRevenueRaw = orderRepo.getTotalRevenue();
+        BigDecimal totalRevenue = (totalRevenueRaw != null) ? totalRevenueRaw : BigDecimal.ZERO;
+
+        Long totalOrdersRaw = orderRepo.getTotalOrders();
+        Long totalOrders = (totalOrdersRaw != null) ? totalOrdersRaw : 0L;
+
+        Long totalUsersRaw = userRepo.getActiveUsers();
+        Long totalUsers = (totalUsersRaw != null) ? totalUsersRaw : 0L;
 
         // Product stats
-        Long totalProducts    = productRepo.getTotalProducts();
-        Long outOfStock       = productRepo.getOutOfStockCount();
-        Long lowStock         = productRepo.getLowStockCount();
+        Long totalProductsRaw = productRepo.getTotalProducts();
+        Long totalProducts = (totalProductsRaw != null) ? totalProductsRaw : 0L;
+
+        Long outOfStockRaw = productRepo.getOutOfStockCount();
+        Long outOfStock = (outOfStockRaw != null) ? outOfStockRaw : 0L;
+
+        Long lowStockRaw = productRepo.getLowStockCount();
+        Long lowStock = (lowStockRaw != null) ? lowStockRaw : 0L;
 
         // Order status breakdown
-        Long pendingOrders   = orderRepo.countByStatus("PENDING");
-        Long confirmedOrders = orderRepo.countByStatus("CONFIRMED");
-        Long deliveredOrders = orderRepo.countByStatus("DELIVERED");
+        Long pendingOrders = (orderRepo.countByStatus("PENDING") != null) ? orderRepo.countByStatus("PENDING") : 0L;
+        Long confirmedOrders = (orderRepo.countByStatus("CONFIRMED") != null) ? orderRepo.countByStatus("CONFIRMED") : 0L;
+        Long deliveredOrders = (orderRepo.countByStatus("DELIVERED") != null) ? orderRepo.countByStatus("DELIVERED") : 0L;
 
         // Top selling products
         List<Object[]> rawTopProducts = orderItemRepo.getTopSellingProducts();

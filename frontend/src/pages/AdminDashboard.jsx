@@ -73,6 +73,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [banner, setBanner] = useState({ title: '', subtitle: '', image: null, buttonText: '', buttonUrl: '', validUntil: '' });
+  const [flashSale, setFlashSale] = useState({ title: '', discountDescription: '', startTime: '', endTime: '', active: true });
 
   useEffect(() => {
     if (user && user.role !== 'ADMIN') { navigate('/'); return; }
@@ -164,8 +166,6 @@ export default function AdminDashboard() {
     return null;
   };
 
-  const [banner, setBanner] = useState({ title: '', subtitle: '', image: null, buttonText: '', buttonUrl: '', validUntil: '' });
-  const [flashSale, setFlashSale] = useState({ title: '', discountDescription: '', startTime: '', endTime: '', active: true });
 
   const handleBannerSubmit = async (e) => {
     e.preventDefault();
