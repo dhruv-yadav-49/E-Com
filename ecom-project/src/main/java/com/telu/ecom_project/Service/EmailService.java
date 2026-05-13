@@ -161,4 +161,20 @@ public class EmailService {
 
         rest.exchange(RESEND_URL, Objects.requireNonNull(HttpMethod.POST), request, String.class);
     }
+
+    public void sendRestockNotification(String toEmail, String productName) {
+        RestTemplate rest = new RestTemplate();
+        Map<String, Object> body = Map.of(
+                "from", "ShopZen <onboarding@resend.dev>",
+                "to", new String[] { toEmail },
+                "subject", "Back in Stock: " + productName,
+                "html", "<p>Hello,</p><p>Good news! <b>" + productName + "</b> is back in stock. Grab it before it's gone again!</p><p><a href='http://localhost:5173/'>Shop Now</a></p>");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(Objects.requireNonNull(resendApiKey));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+        rest.exchange(RESEND_URL, Objects.requireNonNull(HttpMethod.POST), request, String.class);
+    }
 }

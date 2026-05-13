@@ -21,6 +21,7 @@ public class FlashSale {
     private String title;
 
     private String discountDescription;
+    private Double discountPercentage;
 
     private LocalDateTime startTime;
 
