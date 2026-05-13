@@ -74,7 +74,15 @@ export default function AdminDashboard() {
   const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [banner, setBanner] = useState({ title: '', subtitle: '', image: null, buttonText: '', buttonUrl: '', validUntil: '' });
-  const [flashSale, setFlashSale] = useState({ title: '', discountDescription: '', startTime: '', endTime: '', active: true });
+  const [flashSale, setFlashSale] = useState({ title: '', discountDescription: '', discountPercentage: '', startTime: '', endTime: '', active: true });
+  const [allBanners, setAllBanners] = useState([]);
+  const [allFlashSales, setAllFlashSales] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [selectedProductIds, setSelectedProductIds] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [newProduct, setNewProduct] = useState({
+    name: '', description: '', brand: '', price: '', categoryId: '', stockQuantity: '', productAvailable: true, image: null
+  });
 
   useEffect(() => {
     if (user && user.role !== 'ADMIN') { navigate('/'); return; }
@@ -84,12 +92,20 @@ export default function AdminDashboard() {
   const fetchData = async (isRefresh = false) => {
     try {
       isRefresh ? setRefreshing(true) : setLoading(true);
-      const [statsRes, analyticsRes, returnsRes] = await Promise.all([
+      const [statsRes, analyticsRes, returnsRes, bannersRes, flashSalesRes, productsRes, categoriesRes] = await Promise.all([
         API.get('/api/admin/dashboard-stats'),
         API.get('/api/admin/analytics'),
-        API.get('/api/returns-request/pending')
+        API.get('/api/returns-request/pending'),
+        API.get('/api/banners'),
+        API.get('/api/admin/flash-sales/all'),
+        API.get('/api/products'),
+        API.get('/api/categories')
       ]);
       setStats(statsRes.data);
+      setAllBanners(bannersRes.data || []);
+      setAllFlashSales(flashSalesRes.data || []);
+      setAllProducts(productsRes.data || []);
+      setCategories(categoriesRes.data || []);
       if (analyticsRes.data && analyticsRes.data.data) {
         setAnalytics(analyticsRes.data.data);
       }
@@ -166,6 +182,15 @@ export default function AdminDashboard() {
     return null;
   };
 
+  const handleDeleteBanner = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this banner?')) return;
+    try {
+      await API.delete(`/api/admin/banners/${id}`);
+      toast.success('Banner deleted successfully!');
+      fetchData(true);
+    } catch { toast.error('Failed to delete banner'); }
+  };
+
 
   const handleBannerSubmit = async (e) => {
     e.preventDefault();
@@ -183,16 +208,79 @@ export default function AdminDashboard() {
       });
       toast.success('Banner created successfully!');
       setBanner({ title: '', subtitle: '', image: null, buttonText: '', buttonUrl: '', validUntil: '' });
+      fetchData(true);
     } catch { toast.error('Failed to create banner'); }
+  };
+
+  const handleAddProduct = async (e) => {
+    e.preventDefault();
+    if (!newProduct.categoryId || !newProduct.image) {
+      toast.error('Category and Image are required');
+      return;
+    }
+    
+    const productJson = {
+      name: newProduct.name,
+      description: newProduct.description,
+      brand: newProduct.brand,
+      price: Number(newProduct.price),
+      stockQuantity: Number(newProduct.stockQuantity),
+      productAvailable: newProduct.productAvailable
+    };
+
+    const formData = new FormData();
+    formData.append('product', JSON.stringify(productJson));
+    formData.append('imageFile', newProduct.image);
+    formData.append('categoryId', newProduct.categoryId);
+
+    try {
+      await API.post('/api/products', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('Product added successfully!');
+      setNewProduct({ name: '', description: '', brand: '', price: '', categoryId: '', stockQuantity: '', productAvailable: true, image: null });
+      fetchData(true);
+    } catch (err) {
+      toast.error('Failed to add product');
+    }
   };
 
   const handleFlashSaleSubmit = async (e) => {
     e.preventDefault();
+    if (selectedProductIds.length === 0) {
+      toast.error('Please select at least one product');
+      return;
+    }
+
+    const payload = {
+      ...flashSale,
+      products: selectedProductIds.map(id => ({ id }))
+    };
+
     try {
-      await API.post('/api/admin/flash-sales', flashSale);
+      await API.post('/api/admin/flash-sales', payload);
       toast.success('Flash Sale created successfully!');
-      setFlashSale({ title: '', discountDescription: '', startTime: '', endTime: '', active: true });
+      setFlashSale({ title: '', discountDescription: '', discountPercentage: '', startTime: '', endTime: '', active: true });
+      setSelectedProductIds([]);
+      fetchData(true);
     } catch { toast.error('Failed to create flash sale'); }
+  };
+
+  const toggleProductSelection = (productId) => {
+    setSelectedProductIds(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId) 
+        : [...prev, productId]
+    );
+  };
+
+  const handleDeleteFlashSale = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this flash sale?')) return;
+    try {
+      await API.delete(`/api/admin/flash-sales/${id}`);
+      toast.success('Flash sale deleted!');
+      fetchData(true);
+    } catch { toast.error('Failed to delete flash sale'); }
   };
 
   return (
@@ -224,6 +312,79 @@ export default function AdminDashboard() {
           <StatCard label="Total Orders"     rawValue={totalOrders}              icon={ShoppingBag} color="var(--accent2)" bg="rgba(99,102,241,.15)"  sub="Orders placed" />
           <StatCard label="Active Users"     rawValue={totalUsers}               icon={Users}       color="var(--yellow)"  bg="rgba(245,158,11,.15)"  sub="Registered accounts" />
           <StatCard label="Avg. Order Value" rawValue={avgOrderVal}   prefix="₹" icon={Activity}    color="var(--orange)"  bg="rgba(249,115,22,.15)"  sub="Revenue ÷ orders" />
+        </div>
+
+        {/* ── Row 1.5: Catalogue Management ── */}
+        <div style={{ marginBottom: '28px' }}>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Package size={20} style={{ color: 'var(--accent2)' }}/> Catalogue Management
+          </h2>
+          <div className="adm-bottom-grid" style={{ gridTemplateColumns: '1fr' }}>
+             {/* Add Product Form */}
+             <div className="adm-card">
+               <div className="adm-card-header">
+                 <div className="adm-card-title">
+                   <Box size={18} style={{ color: 'var(--accent2)' }} />
+                   <h2>Add New Product</h2>
+                 </div>
+               </div>
+               <form onSubmit={handleAddProduct} style={{ padding: '20px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Product Name</label>
+                      <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} required />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Brand</label>
+                      <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={newProduct.brand} onChange={e => setNewProduct({...newProduct, brand: e.target.value})} required />
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Description</label>
+                    <textarea style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)', minHeight: '60px' }} value={newProduct.description} onChange={e => setNewProduct({...newProduct, description: e.target.value})} required />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Price (₹)</label>
+                      <input type="number" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} required />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Stock Qty</label>
+                      <input type="number" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={newProduct.stockQuantity} onChange={e => setNewProduct({...newProduct, stockQuantity: e.target.value})} required />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Category</label>
+                      <select style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={newProduct.categoryId} onChange={e => setNewProduct({...newProduct, categoryId: e.target.value})} required>
+                        <option value="">Select Category...</option>
+                        {categories.length > 0 ? categories.map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        )) : [
+                          { id: 1, name: 'Electronics' }, { id: 2, name: 'Fashion' }, { id: 3, name: 'Mobiles' },
+                          { id: 4, name: 'Beauty' }, { id: 5, name: 'Home' }, { id: 6, name: 'Appliances' },
+                          { id: 7, name: 'Bags' }, { id: 8, name: 'Sports' }, { id: 9, name: 'Books' }, { id: 10, name: 'Bikes' }
+                        ].map(c => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Product Image</label>
+                    <input type="file" accept="image/*" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} onChange={e => setNewProduct({...newProduct, image: e.target.files[0]})} required />
+                  </div>
+                  
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <input type="checkbox" id="isAvail" checked={newProduct.productAvailable} onChange={e => setNewProduct({...newProduct, productAvailable: e.target.checked})} />
+                    <label htmlFor="isAvail" style={{ fontSize: '13px', color: 'var(--text1)' }}>Product is Available for Sale</label>
+                  </div>
+
+                  <button type="submit" className="btn-primary" style={{ width: '100%' }}>Create Product</button>
+               </form>
+             </div>
+          </div>
         </div>
 
         {/* ── Row 2: Marketing Management ── */}
@@ -267,35 +428,170 @@ export default function AdminDashboard() {
                </form>
              </div>
 
-             {/* Flash Sale Form */}
-             <div className="adm-card">
-               <div className="adm-card-header">
-                 <div className="adm-card-title">
-                   <Zap size={18} style={{ color: 'var(--yellow)' }} />
-                   <h2>Flash Sale</h2>
-                 </div>
-               </div>
-               <form onSubmit={handleFlashSaleSubmit} style={{ padding: '20px' }}>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Sale Title</label>
-                    <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.title} onChange={e => setFlashSale({...flashSale, title: e.target.value})} required />
+              {/* Flash Sale Form */}
+              <div className="adm-card">
+                <div className="adm-card-header">
+                  <div className="adm-card-title">
+                    <Zap size={18} style={{ color: 'var(--yellow)' }} />
+                    <h2>Flash Sale</h2>
                   </div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Description</label>
-                    <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} placeholder="e.g. 50% Off" value={flashSale.discountDescription} onChange={e => setFlashSale({...flashSale, discountDescription: e.target.value})} required />
-                  </div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Start Time</label>
-                    <input type="datetime-local" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.startTime} onChange={e => setFlashSale({...flashSale, startTime: e.target.value})} required />
-                  </div>
-                  <div style={{ marginBottom: '12px' }}>
-                    <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>End Time</label>
-                    <input type="datetime-local" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.endTime} onChange={e => setFlashSale({...flashSale, endTime: e.target.value})} required />
-                  </div>
-                  <button type="submit" className="btn-primary" style={{ width: '100%', background: 'var(--yellow)' }}>Start Flash Sale</button>
-               </form>
-             </div>
+                </div>
+                <form onSubmit={handleFlashSaleSubmit} style={{ padding: '20px' }}>
+                   <div style={{ marginBottom: '12px' }}>
+                     <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Sale Title</label>
+                     <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.title} onChange={e => setFlashSale({...flashSale, title: e.target.value})} required />
+                   </div>
+                   <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                     <div style={{ flex: 2 }}>
+                       <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Description</label>
+                       <input type="text" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} placeholder="e.g. 50% Off" value={flashSale.discountDescription} onChange={e => setFlashSale({...flashSale, discountDescription: e.target.value})} required />
+                     </div>
+                     <div style={{ flex: 1 }}>
+                       <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Discount %</label>
+                       <input type="number" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} placeholder="50" value={flashSale.discountPercentage} onChange={e => setFlashSale({...flashSale, discountPercentage: e.target.value})} required />
+                     </div>
+                   </div>
+                   
+                   {/* Product Selection List */}
+                   <div style={{ marginBottom: '12px' }}>
+                     <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Select Products ({selectedProductIds.length})</label>
+                     <div style={{ 
+                        maxHeight: '150px', 
+                        overflowY: 'auto', 
+                        background: 'var(--bg3)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: '6px',
+                        padding: '8px'
+                     }}>
+                        {allProducts.map(p => (
+                          <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', padding: '4px', borderRadius: '4px', cursor: 'pointer', background: selectedProductIds.includes(p.id) ? 'rgba(99,102,241,0.1)' : 'transparent' }} onClick={() => toggleProductSelection(p.id)}>
+                             <input type="checkbox" checked={selectedProductIds.includes(p.id)} onChange={() => {}} style={{ cursor: 'pointer' }} />
+                             <span style={{ fontSize: '13px', color: 'var(--text1)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
+                          </div>
+                        ))}
+                        {allProducts.length === 0 && <p style={{ fontSize: '12px', color: 'var(--text3)', textAlign: 'center' }}>No products available</p>}
+                     </div>
+                   </div>
+
+                   <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                     <div style={{ flex: 1 }}>
+                       <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>Start Time</label>
+                       <input type="datetime-local" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.startTime} onChange={e => setFlashSale({...flashSale, startTime: e.target.value})} required />
+                     </div>
+                     <div style={{ flex: 1 }}>
+                       <label style={{ display: 'block', fontSize: '12px', color: 'var(--text2)', marginBottom: '4px' }}>End Time</label>
+                       <input type="datetime-local" style={{ width: '100%', padding: '8px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: '6px', color: 'var(--text1)' }} value={flashSale.endTime} onChange={e => setFlashSale({...flashSale, endTime: e.target.value})} required />
+                     </div>
+                   </div>
+                   <button type="submit" className="btn-primary" style={{ width: '100%', background: 'var(--yellow)' }}>Start Flash Sale</button>
+                </form>
+              </div>
           </div>
+        </div>
+
+        {/* Manage Banners List */}
+        <div className="adm-card" style={{ marginBottom: '28px' }}>
+             <div className="adm-card-header">
+               <div className="adm-card-title">
+                 <Package size={18} style={{ color: 'var(--accent2)' }} />
+                 <h2>Manage Banners</h2>
+               </div>
+               <span className="adm-pill">{allBanners.length} Total</span>
+             </div>
+             <div className="adm-table-wrap">
+               <table className="adm-table">
+                 <thead>
+                   <tr>
+                     <th>Preview</th>
+                     <th>Title</th>
+                     <th>Status</th>
+                     <th>Actions</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {allBanners.length === 0 ? (
+                     <tr><td colSpan="4" style={{ textAlign: 'center', padding: '20px' }}>No banners found</td></tr>
+                   ) : allBanners.map(b => (
+                     <tr key={b.id}>
+                       <td>
+                         <img src={b.imageUrl} alt="" style={{ width: '80px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
+                       </td>
+                       <td>
+                         <div style={{ fontWeight: '600' }}>{b.title}</div>
+                         <div style={{ fontSize: '11px', color: 'var(--text3)' }}>Valid till: {b.validUntil}</div>
+                       </td>
+                       <td>
+                         <span className={`adm-status-badge ${new Date(b.validUntil) > new Date() ? 'active' : 'expired'}`} 
+                               style={{ background: new Date(b.validUntil) > new Date() ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                                       color: new Date(b.validUntil) > new Date() ? 'var(--green)' : 'var(--red)' }}>
+                           {new Date(b.validUntil) > new Date() ? 'Active' : 'Expired'}
+                         </span>
+                       </td>
+                       <td>
+                         <button className="btn-ghost" style={{ color: 'var(--red)', padding: '8px' }} onClick={() => handleDeleteBanner(b.id)}>
+                           <XCircle size={18} />
+                         </button>
+                       </td>
+                     </tr>
+                   ))}
+                 </tbody>
+               </table>
+             </div>
+        </div>
+
+        {/* Manage Flash Sales List */}
+        <div className="adm-card" style={{ marginBottom: '28px' }}>
+             <div className="adm-card-header">
+               <div className="adm-card-title">
+                 <Zap size={18} style={{ color: 'var(--yellow)' }} />
+                 <h2>Manage Flash Sales</h2>
+               </div>
+               <span className="adm-pill">{allFlashSales.length} Total</span>
+             </div>
+             <div className="adm-table-wrap">
+               <table className="adm-table">
+                 <thead>
+                   <tr>
+                     <th>Title</th>
+                     <th>Discount</th>
+                     <th>Duration</th>
+                     <th>Status</th>
+                     <th>Actions</th>
+                   </tr>
+                 </thead>
+                 <tbody>
+                   {allFlashSales.length === 0 ? (
+                     <tr><td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>No flash sales found</td></tr>
+                   ) : allFlashSales.map(s => {
+                     const isUpcoming = new Date(s.startTime) > new Date();
+                     const isExpired = new Date(s.endTime) < new Date();
+                     const isActive = !isUpcoming && !isExpired;
+                     return (
+                       <tr key={s.id}>
+                         <td><div style={{ fontWeight: '600' }}>{s.title}</div></td>
+                         <td>{s.discountDescription}</td>
+                         <td>
+                           <div style={{ fontSize: '11px' }}>Start: {new Date(s.startTime).toLocaleString()}</div>
+                           <div style={{ fontSize: '11px' }}>End: {new Date(s.endTime).toLocaleString()}</div>
+                         </td>
+                         <td>
+                           <span className={`adm-status-badge`} 
+                                 style={{ background: isActive ? 'rgba(16,185,129,0.1)' : isUpcoming ? 'rgba(99,102,241,0.1)' : 'rgba(239,68,68,0.1)',
+                                         color: isActive ? 'var(--green)' : isUpcoming ? 'var(--accent2)' : 'var(--red)' }}>
+                             {isActive ? 'Active' : isUpcoming ? 'Upcoming' : 'Expired'}
+                           </span>
+                         </td>
+                         <td>
+                           <button className="btn-ghost" style={{ color: 'var(--red)', padding: '8px' }} onClick={() => handleDeleteFlashSale(s.id)}>
+                             <XCircle size={18} />
+                           </button>
+                         </td>
+                       </tr>
+                     );
+                   })}
+                 </tbody>
+               </table>
+             </div>
         </div>
 
         {/* ── Row 3: Product Inventory Stats ── */}

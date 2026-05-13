@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -91,6 +92,13 @@ public class ProductController {
     public ResponseEntity<String> deleteProduct(@PathVariable int id) {
         service.deleteProduct(id);
         return ResponseEntity.ok("Product deleted successfully");
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/products/bulk")
+    public ResponseEntity<String> deleteMultipleProducts(@RequestBody List<Integer> ids) {
+        service.deleteProducts(ids);
+        return ResponseEntity.ok("Products deleted successfully");
     }
 
     @GetMapping("/products/search")

@@ -40,6 +40,7 @@ public class Product {
 
 
     private boolean lowStock;
+    private Integer flashSaleInitialStock;
 
 
     private Double discountPercentage;

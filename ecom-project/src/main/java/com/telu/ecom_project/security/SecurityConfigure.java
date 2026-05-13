@@ -44,6 +44,7 @@ public class SecurityConfigure {
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/banners/active").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/flash-sales").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
